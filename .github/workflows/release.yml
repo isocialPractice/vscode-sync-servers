@@ -1,0 +1,158 @@
+name: Release
+
+# Runs when a GitHub release is published, or by hand for an existing tag.
+# Each job holds only what it needs:
+#   build   checks out the tag, checks that it agrees with the version files
+#           and the changelog, runs every test, packages the .vsix and checks
+#           its contents, and writes the SBOM. It can read the repository and
+#           nothing more.
+#   attest  attests the .vsix and the SBOM. It runs no code from the
+#           repository, so nothing it installs can use its signing token.
+#   attach  adds the files, the attestation bundle and SHA256SUMS to the
+#           release, refusing to replace files already there.
+# Alphas are .vsix files on the GitHub release only: Marketplace and Open VSX
+# publishing start at 1.0.0.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'The tag of an existing release, such as v1.0.0-alpha.0.5.0'
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+    working-directory: vscode-sync-servers
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+jobs:
+  build:
+    name: Check, test and package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      base: ${{ steps.pack.outputs.base }}
+    steps:
+      - name: Check the tag name
+        working-directory: .
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "\"$TAG\" is not a version tag such as v1.0.0-alpha.0.5.0." >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # A full ref, so a branch with the same name as the tag can never be built instead.
+          ref: refs/tags/${{ github.event.release.tag_name || inputs.tag }}
+          path: vscode-sync-servers
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: vscode-sync-servers/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Check the tag, the version files and the changelog
+        run: npm run release:check -- "$TAG"
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run test:docs
+      - name: Integration tests
+        run: xvfb-run -a npm run test:integration
+      - name: Package the .vsix and check its contents
+        run: npm run pack:check
+      - name: Collect the .vsix and write the SBOM
+        id: pack
+        run: |
+          mkdir ../dist
+          cp -- out/*.vsix ../dist/
+          vsix="$(cd ../dist && ls -- *.vsix)"
+          base="${vsix%.vsix}"
+          npm sbom --sbom-format cyclonedx --omit dev > "../dist/${base}.cdx.json"
+          echo "base=${base}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: |
+            dist/*.vsix
+            dist/*.cdx.json
+          retention-days: 7
+          if-no-files-found: error
+
+  attest:
+    name: Attest
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: dist
+      - name: Attest the .vsix and the SBOM
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.vsix
+            dist/*.cdx.json
+      - name: Keep the attestation bundle
+        env:
+          BASE: ${{ needs.build.outputs.base }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          mkdir bundle
+          cp -- "$BUNDLE" "bundle/${BASE}.sigstore.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: attestation
+          path: bundle/*.sigstore.json
+          retention-days: 7
+          if-no-files-found: error
+
+  attach:
+    name: Attach to the release
+    needs: [build, attest]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: dist
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: attestation
+          path: dist
+      - name: Write SHA256SUMS
+        run: |
+          cd dist
+          sha256sum -- *.vsix *.cdx.json *.sigstore.json > SHA256SUMS
+          cat SHA256SUMS
+      - name: Attach the files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" dist/*.vsix dist/*.cdx.json dist/*.sigstore.json dist/SHA256SUMS --repo "$GITHUB_REPOSITORY"

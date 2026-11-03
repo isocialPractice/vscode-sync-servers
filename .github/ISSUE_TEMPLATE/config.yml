@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/isocialPractice/vscode-sync-servers/security/advisories/new
+    about: Report privately. Never open a public issue for a vulnerability.
+  - name: A problem with the sync-servers command line or the engine
+    url: https://github.com/isocialPractice/cmd-sync-servers/issues
+    about: Problems that also happen with the sync-servers command belong to the engine's repository.

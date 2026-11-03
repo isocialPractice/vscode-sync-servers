@@ -1,0 +1,62 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problems go through private vulnerability reporting, never an
+        issue. See SECURITY.md.
+
+        Use placeholders such as `My Site`, `sftp.example.com` and `demo-user`.
+        Never paste a password, a private key or a real host name.
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Shown on the extension's page in the Extensions view.
+      placeholder: 1.0.0-alpha.0.0.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: VS Code version and operating system
+      description: From Help > About.
+      placeholder: VS Code 1.101.0, Windows 11
+    validations:
+      required: true
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Protocol
+      options:
+        - Not related to a server
+        - SFTP
+        - FTPS (explicit)
+        - FTPS (implicit)
+        - FTP
+        - Local or network folder
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sync Servers: Add Site, named My Site
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log output
+      description: From Sync Servers: Show Log. Check it for host names and paths before posting.
+      render: text

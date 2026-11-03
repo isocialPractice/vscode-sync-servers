@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="The Explorer marks and menus of Sync Servers for VS Code, cloaking files and folders, and the Remote Files view.">
+<title>Files and cloaking | Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="site-settings.html">Site Settings</a></li>
+        <li><a href="synchronize.html">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html" aria-current="page">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html">Upload on save</a></li>
+        <li><a href="commands-and-settings.html">Commands and settings</a></li>
+        <li><a href="security-and-trust.html">Security and trust</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Files and cloaking</h1>
+<p class="lead">The Explorer shows what changed since the last sync and offers the site's actions on its files; the Remote Files view shows the server's side.</p>
+
+<h2 id="marks">Explorer marks</h2>
+<table>
+  <caption>Marks on files of the active site</caption>
+  <thead><tr><th scope="col">Mark</th><th scope="col">Means</th></tr></thead>
+  <tbody>
+    <tr><td><code>⊘</code>, dimmed</td><td>Cloaked: never synchronized.</td></tr>
+    <tr><td><code>↑</code></td><td>Changed or added since the last sync. Put uploads it.</td></tr>
+    <tr><td><code>!</code>, warning colour</td><td>Changed locally and on the server since the last sync. Synchronize to choose which copy to keep. The colour carries up to its folders.</td></tr>
+  </tbody>
+</table>
+<p>Every mark has a tooltip. They show only for the active site, and only once it has been synchronized, so a new site is not covered in arrows. They come from the records of the last sync and the last preview, worked out again after every sync and on save, never on a timer and never by asking a server. <code>syncServers.decorations.enabled</code> turns them off.</p>
+
+<h2 id="menus">Explorer and editor menus</h2>
+<p>When the open workspace is inside the active site's local folder, the Explorer's context menu offers <strong>Put</strong>, <strong>Get</strong>, <strong>Compare with Remote</strong> (files only), <strong>Synchronize...</strong>, <strong>Cloak</strong> and <strong>Uncloak</strong>, for one file or several chosen together. The editor's context menu and its tab's offer Put, Get and Compare with Remote. Every one of them is also in the Command Palette, acting on the file in the editor.</p>
+
+<h2 id="cloak">Cloak and Uncloak</h2>
+<p><strong>Cloak</strong> adds the chosen files and folders to the site's cloaked paths: from then on they are never scanned, listed, transferred or deleted, on either side. <strong>Uncloak</strong> takes them out again; run from the Command Palette with no file open, it lists the cloaked paths to choose from. A file can also be cloaked by a pattern, such as <code>.psd</code>, by a global pattern, or by a cloaked folder above it; Uncloak says which, and points to the patterns in <a href="site-settings.html#cloaking">Site Settings</a> or to Global Cloaking Patterns.</p>
+
+<h2 id="global-cloaking">Global cloaking patterns</h2>
+<p>Files that belong to no site, such as <code>.git/</code>, <code>node_modules/</code> or <code>Thumbs.db</code>, can be cloaked once for every site. <strong>Sync Servers: Global Cloaking Patterns...</strong> lists them: <strong>Add Patterns...</strong> takes new ones, separated by spaces, and choosing a pattern removes it after a question. Every site uses the global patterns before its own, so a site's <code>!pattern</code> brings back what a global pattern cloaks, and a site can turn them off with <strong>Use global patterns</strong> in <a href="site-settings.html#cloaking">Site Settings</a>. They are kept in the list of sites, so <code>sync-servers cloak --global</code> on the command line changes the same patterns, and the Explorer marks follow at once.</p>
+
+<h2 id="remote-files">The Remote Files view</h2>
+<p>The Remote Files view lists the active site's Remote server, one folder at a time as you open them, so a large server is never listed whole. Files changed or added on the server since the last sync carry <code>↓</code>; cloaked ones carry <code>⊘</code>. Clicking a file opens it read-only.</p>
+<table>
+  <caption>Actions in the Remote Files view</caption>
+  <thead><tr><th scope="col">Action</th><th scope="col">Does</th></tr></thead>
+  <tbody>
+    <tr><td>Open Read-Only</td><td>The server's copy in a read-only editor.</td></tr>
+    <tr><td>Compare with Remote</td><td>The server's copy beside the local file.</td></tr>
+    <tr><td>Get</td><td>Downloads the file or folder, through the same plan and guards as Synchronize.</td></tr>
+    <tr><td>Cloak, Uncloak</td><td>As in the Explorer.</td></tr>
+    <tr><td>Delete on Server</td><td>Removes one file from the server after a question, and keeps the local copy. Refused at the top of a server unless the server allows deletes there.</td></tr>
+    <tr><td>Refresh Remote Files</td><td>Lists the open folders again.</td></tr>
+  </tbody>
+</table>
+<p>The view keeps one connection, closed after two minutes unused or when the active site changes.</p>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

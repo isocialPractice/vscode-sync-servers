@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Synchronize a site's local folder with its SFTP, FTPS and FTP servers from VS Code, with a preview of every change.">
+<title>Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html" aria-current="page">Home</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="site-settings.html">Site Settings</a></li>
+        <li><a href="synchronize.html">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html">Upload on save</a></li>
+        <li><a href="commands-and-settings.html">Commands and settings</a></li>
+        <li><a href="security-and-trust.html">Security and trust</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Sync Servers for VS Code</h1>
+<p class="lead">Keep a site's local folder and its servers in step from VS Code, the way Dreamweaver's Synchronize does: sites, servers, cloaking, and a preview of every file that would change before anything moves.</p>
+
+<div class="note">
+  <p><strong>Early alpha.</strong> Everything on these pages works today, and details may still change before 1.0.0. Try it on a copy of a site first.</p>
+</div>
+
+<h2 id="what-it-does">What it does</h2>
+<ul>
+  <li><strong>Sites and servers.</strong> A site is a local folder and its servers over SFTP, FTPS, FTP, or a local or network folder. One server holds the Remote role for synchronizing; another may hold the Testing role.</li>
+  <li><strong>A preview of every change.</strong> Synchronize lists only the files that differ, grouped by what will happen to each, with a checkbox on every row. Nothing moves until you choose Synchronize Checked Files.</li>
+  <li><strong>A memory of the last sync.</strong> A file changed on both sides since the last sync waits for your decision instead of being overwritten.</li>
+  <li><strong>The Explorer knows.</strong> Changed files carry an arrow, cloaked files are dimmed, and Put, Get, Compare, Cloak and Uncloak are in the context menu.</li>
+  <li><strong>Upload on save.</strong> A saved file can go straight to the Testing server, unless it is cloaked or sensitive.</li>
+  <li><strong>One list of sites.</strong> The extension shares its sites with the <a href="https://isocialpractice.github.io/cmd-sync-servers/"><code>sync-servers</code> command line</a> and runs the same engine.</li>
+</ul>
+
+<h2 id="install">Install</h2>
+<p>It needs VS Code 1.101 or later, on Windows, macOS or Linux. Alphas are published as <code>.vsix</code> files on the <a href="https://github.com/isocialPractice/vscode-sync-servers/releases">releases page</a>, not on the Marketplace.</p>
+<ol>
+  <li>Download <code>vscode-sync-servers-&lt;version&gt;.vsix</code> from the latest release. <a href="security-and-trust.html#verify">Check the download</a> if you like.</li>
+  <li>In VS Code, open the Extensions view, choose <strong>...</strong> at its top, then <strong>Install from VSIX...</strong>, and pick the file.</li>
+</ol>
+<p>Or from a terminal:</p>
+<pre><code>code --install-extension vscode-sync-servers-1.0.0-alpha.0.5.0.vsix</code></pre>
+
+<h2 id="views">The views at a glance</h2>
+<p>The <strong>Sync Servers</strong> icon in the activity bar, two stacked servers with arrows between them, opens three views:</p>
+<table>
+  <caption>The views of the Sync Servers container</caption>
+  <thead><tr><th scope="col">View</th><th scope="col">Shows</th></tr></thead>
+  <tbody>
+    <tr><td>Sites</td><td>Every site with its servers and their Remote and Testing roles. It starts with an <strong>Add Site</strong> button.</td></tr>
+    <tr><td>Remote Files</td><td>The files on the active site's Remote server, one folder at a time.</td></tr>
+    <tr><td>Sync Preview</td><td>While a synchronization waits for you: each file that would change, grouped by what will happen to it.</td></tr>
+  </tbody>
+</table>
+<p>The status bar shows the active site and its Remote server, such as <code>My Site: Production</code>, and counts files during a run.</p>
+
+<h2 id="next">Where to next</h2>
+<ul class="cards">
+  <li><a href="getting-started.html">Getting started</a><p>A site, a server, a password and the first sync.</p></li>
+  <li><a href="site-settings.html">Site Settings</a><p>Every category of the settings form.</p></li>
+  <li><a href="synchronize.html">Synchronize</a><p>The dialog, the preview, resolving files, and Compare.</p></li>
+  <li><a href="files-and-cloaking.html">Files and cloaking</a><p>Explorer marks and menus, cloaking, and the Remote Files view.</p></li>
+  <li><a href="upload-on-save.html">Upload on save</a><p>Saved files to the Testing server.</p></li>
+  <li><a href="commands-and-settings.html">Commands and settings</a><p>Every command and setting.</p></li>
+  <li><a href="security-and-trust.html">Security and trust</a><p>Passwords, host keys, Restricted Mode, and checking a release.</p></li>
+  <li><a href="troubleshooting.html">Troubleshooting</a><p>Common problems and the log.</p></li>
+</ul>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

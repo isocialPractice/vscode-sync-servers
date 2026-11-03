@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="How Sync Servers for VS Code keeps passwords, checks servers, treats untrusted workspaces, and how to check a release.">
+<title>Security and trust | Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="site-settings.html">Site Settings</a></li>
+        <li><a href="synchronize.html">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html">Upload on save</a></li>
+        <li><a href="commands-and-settings.html">Commands and settings</a></li>
+        <li><a href="security-and-trust.html" aria-current="page">Security and trust</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Security and trust</h1>
+<p class="lead">The extension moves files with your credentials, so it keeps them where VS Code protects them, checks every server it talks to, and asks before writing from a workspace you have not trusted.</p>
+
+<h2 id="secrets">Passwords</h2>
+<ul>
+  <li>Passwords and key passphrases are kept in VS Code's secret storage, which the operating system's keychain protects, under <code>sync-servers/&lt;site&gt;/&lt;server&gt;/password</code>. They are never written to <code>sites.json</code> or any other file.</li>
+  <li>They are typed into VS Code's own password box, never into the Site Settings page, which only learns whether one is saved.</li>
+  <li>A saved password is tied to the protocol, host, port and user it was saved for. After any of them changes, it is not sent, and the password box says why when it asks again.</li>
+  <li>A password typed in Add Site, or when a server asks, is sent only after the server's host key or certificate is verified or decided on, and saved only once the server accepts it.</li>
+  <li>Removing a site, or a server in Site Settings, forgets its saved passwords.</li>
+  <li>Every password that passes through is removed from the Sync Servers log.</li>
+  <li>The command line keeps its own passwords in the operating system's credential store, so each asks once.</li>
+</ul>
+
+<h2 id="servers">Servers</h2>
+<ul>
+  <li><strong>SFTP host keys</strong> are shown with their fingerprint on the first connection, and pinned when you choose Trust and Remember. A different key later stops the connection and is never accepted quietly.</li>
+  <li><strong>FTPS certificates</strong> are checked against the system's authorities and the host name, over TLS 1.2 or later. One that does not verify is shown with its names, issuer, validity dates and SHA-256 fingerprint, and nothing more is sent until you decide: connect to a host name it covers, check it as that name, trust it by its fingerprint once or for good, or cancel. An expired certificate, or one not valid yet, is never trusted. A privately signed certificate can also be verified with its authority file in the server's Advanced settings. FTPS never falls back to plain FTP.</li>
+  <li><strong>Plain FTP</strong> is refused until the server's Allow plain FTP is checked, because it sends the password in clear text.</li>
+  <li>Names a server sends that would leave the site, or that this system cannot hold, are never used as paths, and no write follows a link out of the site.</li>
+</ul>
+<p>The engine's <a href="https://isocialpractice.github.io/cmd-sync-servers/security.html">security page</a> has the full list of threats and the test behind each defence.</p>
+
+<h2 id="trust">Workspace trust</h2>
+<p>Sites come from your own list of sites, which a cloned repository cannot change: <code>syncServers.configDir</code> can be set in your user settings only. In a workspace in Restricted Mode:</p>
+<ul>
+  <li>Nothing is uploaded on save.</li>
+  <li>Synchronize, Put and Delete on Server ask before writing to a server.</li>
+  <li>The workspace's own values for <code>syncServers.uploadOnSave.enabled</code> and <code>syncServers.confirmDeletes</code> are ignored.</li>
+</ul>
+
+<h2 id="webview">The Site Settings page</h2>
+<p>The settings form runs under a Content-Security-Policy that allows its own stylesheet and one script only: no remote content, no inline code, no eval. Every message between the page and the extension is checked against a schema in both directions and dropped when it does not match, and the page reports anything its policy blocks to the log. A pinned host key or a trusted certificate can be kept or forgotten from the form. A new one is saved only when you trusted it in VS Code's own warning during a Test or Browse... from that form; the page itself can never set one.</p>
+
+<h2 id="local">What stays on your machine</h2>
+<p>The extension talks to your servers and to nothing else: no telemetry, no update checks, no third-party services. The list of sites, the sync records and the log stay in your user profile.</p>
+
+<h2 id="verify">Checking a release</h2>
+<p>Each release on GitHub is built from its tag by the repository's release workflow, and carries the <code>.vsix</code>, a CycloneDX SBOM, a Sigstore attestation bundle and <code>SHA256SUMS</code>. With the files downloaded into one folder:</p>
+<pre><code>sha256sum --check --ignore-missing SHA256SUMS
+gh attestation verify vscode-sync-servers-&lt;version&gt;.vsix --repo isocialPractice/vscode-sync-servers \
+  --signer-workflow isocialPractice/vscode-sync-servers/.github/workflows/release.yml</code></pre>
+
+<h2 id="report">Reporting a vulnerability</h2>
+<p>Report privately through the repository's <a href="https://github.com/isocialPractice/vscode-sync-servers/security/advisories/new">private vulnerability reporting</a>, never in a public issue. The <a href="https://github.com/isocialPractice/vscode-sync-servers/blob/main/SECURITY.md">security policy</a> says what to include and what to expect.</p>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

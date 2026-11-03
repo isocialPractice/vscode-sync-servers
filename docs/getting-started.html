@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Add a site, a server and a password in Sync Servers for VS Code, then run the first synchronization.">
+<title>Getting started | Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html" aria-current="page">Getting started</a></li>
+        <li><a href="site-settings.html">Site Settings</a></li>
+        <li><a href="synchronize.html">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html">Upload on save</a></li>
+        <li><a href="commands-and-settings.html">Commands and settings</a></li>
+        <li><a href="security-and-trust.html">Security and trust</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Getting started</h1>
+<p class="lead">From an empty list to a first synchronization in a few minutes. The examples use a site called <code>My Site</code> in <code>C:\Users\&lt;user&gt;\Sites\my-site</code> on Windows, or <code>~/sites/my-site</code> elsewhere, published to <code>sftp.example.com</code> as <code>demo-user</code>.</p>
+
+<h2 id="add-site">1. Add a site</h2>
+<p>Open the <strong>Sync Servers</strong> view in the activity bar and choose <strong>Add Site</strong>, or run <strong>Sync Servers: Add Site</strong> from the Command Palette. A short input asks, one step at a time, with <strong>Back</strong> on each:</p>
+<ol>
+  <li>The site name, such as <code>My Site</code>, different from your other sites ignoring case.</li>
+  <li>The local site folder, from the folder picker.</li>
+  <li><strong>Protocol</strong>: SFTP, FTPS, FTPS with implicit TLS, FTP, a local or network folder, or no server yet. Plain FTP asks a second time, because it sends the password in clear text.</li>
+  <li><strong>Host</strong>: the FTP or SFTP host your hosting panel shows, such as <code>sftp.example.com</code> or <code>203.0.113.10</code>. <code>host:port</code> works when the port is not the usual one, and a whole address such as <code>sftp://demo-user@sftp.example.com/var/www/my-site</code> fills the protocol, the user and the root directory too.</li>
+  <li><strong>User</strong>, such as <code>demo-user</code>. Many hosts name FTP accounts in full, such as <code>demo-user@example.com</code>.</li>
+  <li>The password. Leave it empty to be asked when the server wants it.</li>
+</ol>
+<p>Add Site then connects, before anything is added, under a notification you can cancel:</p>
+<ul>
+  <li>A host key or a certificate seen for the first time is shown for you to decide on, as in <a href="#test">Test the connection</a>.</li>
+  <li>When the server refuses the user name or password, Add Site asks for both again, up to three times.</li>
+  <li>When it cannot connect at all, it offers <strong>Change the Host</strong> (or <strong>Try Again</strong> after refused sign-ins), <strong>Save Without Testing</strong>, which asks for the root directory as a path, and <strong>Cancel</strong>, which adds nothing.</li>
+</ul>
+<p>Once connected, a list of the folders on the server opens where your account starts. Choose <strong>Use This Folder</strong> on the folder that holds the site, such as <code>/var/www/my-site</code>; <code>..</code> goes up, a folder opens, and a path typed in the box goes straight there. When you choose <code>/</code>, the top of what the account can see, Add Site asks once whether synchronizing may delete files there.</p>
+<p>The server is named after its host, such as <code>sftp.example.com</code>, and can be renamed in <a href="site-settings.html">Site Settings</a>. The password is saved in VS Code's secret storage only once the server has accepted it. The first server becomes the Remote server, the one Synchronize uses. A site added with <code>sync-servers site add</code> in a terminal shows up in the Sites view straight away, and the other way round: both read the same list.</p>
+
+<h2 id="test">2. Test the connection</h2>
+<p>Choose <strong>Test Connection</strong> on the server in the Sites view. The first connection to an SFTP server shows the server's host key fingerprint in a warning:</p>
+<ul>
+  <li><strong>Trust and Remember</strong> pins the key in the server's settings. A different key later stops the connection.</li>
+  <li><strong>Trust Once</strong> trusts it for this connection only.</li>
+  <li>Closing the warning refuses the key.</li>
+</ul>
+<p>An FTPS certificate that does not verify shows its names, its issuer, its validity dates and its SHA-256 fingerprint. When the certificate covers another name for the same server, such as <code>server1.hosting.example.net</code> for a certificate issued to <code>*.hosting.example.net</code>, the first choices keep full verification: <strong>Connect to server1.hosting.example.net</strong> changes the host, and <strong>Check as server1.hosting.example.net</strong> keeps the host and checks the certificate against that name. <strong>Trust and Remember</strong> and <strong>Trust Once</strong> trust the certificate by its fingerprint. An expired certificate, or one not valid yet, can only be cancelled.</p>
+<p>Compare a fingerprint with the one your host publishes before trusting it. A passing test says how many items the root folder holds and which server software answered. A failing one offers the fix that fits: <strong>Choose Folder</strong> when the root directory is not found, <strong>Sign In Again</strong> when the user name or password is refused, and <strong>Edit Host</strong> when the host is not found or refuses the connection.</p>
+
+<h2 id="open">3. Open the site's folder</h2>
+<p>Choose <strong>Open Site Folder</strong> on the site. When the workspace is a site's local folder, that site is active on its own: the status bar shows <code>My Site: sftp.example.com</code>, the Explorer marks changed files, and its context menu offers Put, Get and Compare. <strong>Switch Site</strong> makes another site active without opening its folder.</p>
+
+<h2 id="first-sync">4. Synchronize</h2>
+<ol>
+  <li>Choose <strong>Synchronize...</strong> on the site, or click the status bar item.</li>
+  <li>Answer <strong>Put newer files to remote</strong>, then <strong>Keep remote files that are not on the local drive</strong>.</li>
+  <li>The Sync Preview opens with every file that would move, checked. Uncheck anything that should stay.</li>
+  <li>Choose <strong>Synchronize Checked Files</strong> in the preview's title bar.</li>
+</ol>
+<p>A notification reports <code>Synchronized 12 files. 0 failed. 0 skipped.</code> From now on, the extension remembers what each side looked like, so a file changed on both sides waits for your decision. <a href="synchronize.html">Synchronize</a> covers the preview in full.</p>
+
+<h2 id="share">Sharing the list with the command line</h2>
+<p>The extension and <code>sync-servers</code> read the same <code>sites.json</code>: in <code>%APPDATA%\sync-servers</code> on Windows, <code>~/Library/Application Support/sync-servers</code> on macOS, and <code>~/.config/sync-servers</code> elsewhere. The setting <code>syncServers.configDir</code>, or <code>SYNC_SERVERS_HOME</code>, points both somewhere else. Passwords are the exception: each keeps its own, so each asks once.</p>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

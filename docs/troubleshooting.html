@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Common problems with Sync Servers for VS Code, what they mean, and the log.">
+<title>Troubleshooting | Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="site-settings.html">Site Settings</a></li>
+        <li><a href="synchronize.html">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html">Upload on save</a></li>
+        <li><a href="commands-and-settings.html">Commands and settings</a></li>
+        <li><a href="security-and-trust.html">Security and trust</a></li>
+        <li><a href="troubleshooting.html" aria-current="page">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Troubleshooting</h1>
+<p class="lead">Most answers start in the log: run <strong>Sync Servers: Show Log</strong>, or choose <strong>Show Log</strong> on an error message.</p>
+
+<h2 id="log">The log</h2>
+<p>The Sync Servers log in the Output panel carries the engine's records: connections, transfers, files held back and why, and every failure. Passwords and other secrets are removed before a line is written. VS Code's <strong>Set Log Level...</strong> on the panel shows more or less detail. Check a line for host names and paths before posting it anywhere.</p>
+
+<h2 id="problems">Problems and what to do</h2>
+<dl>
+  <dt id="list-unreadable">The Sites view says the list of sites cannot be read</dt>
+  <dd><code>sites.json</code> holds something the engine does not accept, often after an edit by hand. Click the row, or <strong>Open sites.json</strong> on the message, to open the file; the message names the site, the server, the field and its value, such as <code>Site "My Site", server "Production", remoteRoot "example.com/my-site": Must be an absolute path that starts with "/".</code> Fix it, or put back <code>sites.json.bak</code> beside it. The view reloads when the file is saved.</dd>
+
+  <dt id="host-not-found">"The host ... was not found", or a host refuses the connection</dt>
+  <dd>Check the Host against the FTP or SFTP host your hosting panel shows, and the protocol and port: SFTP usually uses 22, FTPS 21, implicit FTPS 990. <strong>Edit Host</strong> on the message opens the server in Site Settings, where <strong>Test</strong> tries the new values before you save them.</dd>
+
+  <dt id="certificate">A certificate is not accepted</dt>
+  <dd>The warning names what is wrong: a certificate issued to another name, signed by itself, from an authority this computer does not trust, expired, or not the one trusted before. When it covers another name for the same server, such as <code>server1.hosting.example.net</code>, connecting to that name keeps full verification. Otherwise compare the SHA-256 fingerprint with the one your host publishes before trusting it. An expired certificate is never trusted: ask your host to renew it, or check this computer's date and time. A trusted certificate is listed on the server's <a href="site-settings.html#advanced">Advanced tab</a>, with Forget Certificate.</dd>
+
+  <dt id="remote-root">"The remote root ... was not found"</dt>
+  <dd>The root directory is not where the account sees it; many hosts start an account in its own folder. The message names the folder the account opens in and the folders it holds. <strong>Choose Folder</strong> on the message lists them so you can pick the right one, then saves it and tests again; <strong>Browse...</strong> in Site Settings does the same.</dd>
+
+  <dt id="host-key">The host key of a server changed</dt>
+  <dd>The connection stops, showing both fingerprints. Ask your host whether the key really changed. If it did, open the server in <a href="site-settings.html#advanced">Site Settings</a>, choose Forget Host Key, save, and trust the new key on the next connection.</dd>
+
+  <dt id="sign-in">Signing in fails, or the password is asked for again</dt>
+  <dd>When the server refuses the sign-in, check the User first: many hosts name FTP accounts in full, such as <code>demo-user@example.com</code>. <strong>Sign In Again</strong> on the message asks for the user and the password, and offers to save the password once the server accepts it. A saved password is tied to the protocol, host, port and user it was saved for, and is not sent after any of them changes; the password box then says so. Choose <strong>Set Password...</strong> on the server to save it again. The command line keeps its own passwords, so a password saved there is not known to VS Code.</dd>
+
+  <dt id="no-upload">A saved file is not uploaded</dt>
+  <dd>Check, in order: the server's Upload on save is on and the site is saved; <code>syncServers.uploadOnSave.enabled</code> is on; the workspace is trusted; the file is not cloaked and matches no sensitive pattern; and the file did not change on the server too. The log says which it was.</dd>
+
+  <dt id="no-marks">The Explorer shows no marks</dt>
+  <dd>Marks show for the active site only, and only after it has been synchronized once. Check the status bar for the active site, and that <code>syncServers.decorations.enabled</code> is on.</dd>
+
+  <dt id="no-menus">Put and Get are missing from the Explorer's menu</dt>
+  <dd>They show when the open workspace is inside the active site's local folder. Open the site's folder with <strong>Open Site Folder</strong>, or run the commands from the Command Palette.</dd>
+
+  <dt id="not-in-site">"is not inside the local folder of any site"</dt>
+  <dd>The file is outside every site's local folder. Check the site's Local site folder in Site Settings.</dd>
+
+  <dt id="both-changed">A file keeps asking for a decision</dt>
+  <dd>It changed locally and on the server since the last sync, or differs with no sync record. Choose Use Local, Use Remote or Mark Synchronized in the preview; Skip leaves it waiting for next time.</dd>
+
+  <dt id="every-file">Every file shows as changed after a server change</dt>
+  <dd>Some servers cannot set file times, or round them. Each side is compared with its own record, so this usually settles after one sync. If not, raise the Time tolerance in the Synchronization category, or compare by checksum.</dd>
+
+  <dt id="mass-delete">"is more than" the delete limit</dt>
+  <dd>The run would delete more files than the site allows without a check. Type the count when asked, or raise the delete limit in Site Settings if large deletes are normal for the site.</dd>
+
+  <dt id="other-list">The command line and VS Code show different sites</dt>
+  <dd>They read different folders. Check <code>syncServers.configDir</code> in your user settings and <code>SYNC_SERVERS_HOME</code> in the environment VS Code was started from.</dd>
+</dl>
+<p>The engine's <a href="https://isocialpractice.github.io/cmd-sync-servers/troubleshooting.html">troubleshooting page</a> lists every error code and what to do about it.</p>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

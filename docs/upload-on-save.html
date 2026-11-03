@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Upload on save in Sync Servers for VS Code: saved files to the Testing server, and what is never uploaded.">
+<title>Upload on save | Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="site-settings.html">Site Settings</a></li>
+        <li><a href="synchronize.html">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html" aria-current="page">Upload on save</a></li>
+        <li><a href="commands-and-settings.html">Commands and settings</a></li>
+        <li><a href="security-and-trust.html">Security and trust</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Upload on save</h1>
+<p class="lead">Every file you save in a site's local folder can go straight to a server, usually the Testing server, so a staging copy follows your edits.</p>
+
+<h2 id="turn-on">Turning it on</h2>
+<ol>
+  <li>Open <a href="site-settings.html#servers">Site Settings</a> for the site.</li>
+  <li>Edit the server, for example <code>Staging</code>, and on its <strong>Advanced</strong> tab check <strong>Upload on save</strong>.</li>
+  <li>Save the site.</li>
+</ol>
+<p>Each server has its own switch, so a site can push to its Testing server on save while its Remote server waits for Synchronize. Making <code>Staging</code> the Testing server in the servers table records which server it is for.</p>
+
+<h2 id="what-happens">What happens on save</h2>
+<ul>
+  <li>The saved file is put to every server of its site whose Upload on save is on, 300 milliseconds after the last save, so a burst of saves puts it once.</li>
+  <li>It goes through the same plan and guards as Put. A file changed on the server too since the last sync is not overwritten: a notification says so, and Synchronize lets you choose.</li>
+  <li>A successful upload shows in the status bar for a moment, such as <code>Put index.html to Staging</code>, and in the log. A failure shows as an error with <strong>Show Log</strong>.</li>
+</ul>
+
+<h2 id="never">What is never uploaded on save</h2>
+<ul>
+  <li>Cloaked files and files inside cloaked folders.</li>
+  <li>Files that match a sensitive pattern, such as <code>.env</code> or a private key. Put them with Synchronize, where you can check them on purpose.</li>
+  <li>Anything, in a workspace in Restricted Mode. Trusting the workspace turns it back on.</li>
+  <li>Anything, while the setting <code>syncServers.uploadOnSave.enabled</code> is off. It is the one switch over every server's Upload on save.</li>
+</ul>
+<p>The log says why each file was held back, such as <em>Not uploaded on save: it is cloaked</em>.</p>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

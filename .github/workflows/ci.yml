@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+    working-directory: vscode-sync-servers
+
+jobs:
+  lint:
+    name: Lint, type check, unit tests and audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: vscode-sync-servers
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: vscode-sync-servers/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm audit signatures
+      - run: npm audit --omit=dev --audit-level=high
+
+  test:
+    name: Integration (${{ matrix.os }}, VS Code ${{ matrix.vscode }})
+    needs: lint
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Labels of .vscode-test.mjs: VS Code 1.101.0, the oldest supported
+        # release, and the current one.
+        vscode: [minimum, stable]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: vscode-sync-servers
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: vscode-sync-servers/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Integration tests
+        env:
+          VSCODE_LABEL: ${{ matrix.vscode }}
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a npm run test:integration -- --label "$VSCODE_LABEL"
+          else
+            npm run test:integration -- --label "$VSCODE_LABEL"
+          fi
+
+  package:
+    name: Package contents
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: vscode-sync-servers
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: vscode-sync-servers/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run pack:check

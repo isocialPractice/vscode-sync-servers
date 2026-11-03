@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Synchronize a site in Sync Servers for VS Code: the dialog, the Sync Preview, resolving files changed on both sides, Compare, Put and Get.">
+<title>Synchronize | Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="site-settings.html">Site Settings</a></li>
+        <li><a href="synchronize.html" aria-current="page">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html">Upload on save</a></li>
+        <li><a href="commands-and-settings.html">Commands and settings</a></li>
+        <li><a href="security-and-trust.html">Security and trust</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Synchronize</h1>
+<p class="lead">Compare a site with its Remote server, see every file that differs, choose, and only then move anything.</p>
+
+<h2 id="dialog">The dialog</h2>
+<p><strong>Synchronize...</strong> asks the questions of Dreamweaver's Synchronize dialog, each answer preselected from the last time:</p>
+<ol>
+  <li><strong>What to synchronize</strong>: the entire site, or the files chosen in the Explorer. This question appears only when it started from an Explorer selection.</li>
+  <li><strong>Which way</strong>: Put newer files to remote, Get newer files from remote, or Get and put newer files.</li>
+  <li><strong>Files only on the other side</strong>: keep them, or delete them, worded for the direction, such as <em>Delete remote files not on local drive</em>.</li>
+</ol>
+<p>The extension then compares both sides, with progress and a Cancel button. Unchanged files are counted, never listed; if nothing differs, a message says the site is in sync.</p>
+
+<h2 id="preview">The Sync Preview</h2>
+<p>The preview groups the files by what will happen to each, with a count on every group, decisions first:</p>
+<table>
+  <caption>Groups of the Sync Preview</caption>
+  <thead><tr><th scope="col">Group</th><th scope="col">Holds</th></tr></thead>
+  <tbody>
+    <tr><td>Resolve</td><td>Files changed on both sides, or differing with no sync record. They have no checkbox until you choose.</td></tr>
+    <tr><td>Put, Get</td><td>Files that move to or from the server, checked.</td></tr>
+    <tr><td>Delete remote, Delete local</td><td>Files the delete option removes. Files never synchronized before start unchecked.</td></tr>
+    <tr><td>Guarded</td><td>Sensitive files such as <code>.env</code>, unchecked until you check them.</td></tr>
+    <tr><td>Skip</td><td>Files you chose to skip or mark as synchronized.</td></tr>
+    <tr><td>Errors</td><td>Names that cannot be used on this system, case twins and links, which never move.</td></tr>
+  </tbody>
+</table>
+<p>The view's heading names the site, the server and the direction; its description gives the summary, such as <em>Files: 36 will be updated, 169 will be skipped, 2 need a decision</em>. The setting <code>syncServers.preview.groupBy</code> groups by folder instead.</p>
+
+<h3 id="resolving">Choosing for a file</h3>
+<p>A file under Resolve offers, inline and in its context menu:</p>
+<ul>
+  <li><strong>Use Local</strong>: put the local copy.</li>
+  <li><strong>Use Remote</strong>: get the server's copy.</li>
+  <li><strong>Skip</strong>: leave both copies this time.</li>
+  <li><strong>Compare with Remote</strong>: see both copies side by side.</li>
+  <li><strong>Mark Synchronized</strong>: record both copies as in step without moving either.</li>
+</ul>
+<p>Choosing moves the row to that group, checked. Any row can take the actions its copies allow, including <strong>Delete on Server</strong> and <strong>Delete Local File</strong>. Several rows can be chosen at once, and while a preview waits every action is also in the Command Palette, acting on the rows chosen in the view.</p>
+
+<h2 id="run">Running it</h2>
+<p><strong>Synchronize Checked Files</strong> in the preview's title bar runs the checked rows. <strong>Check All</strong>, <strong>Uncheck All</strong> and <strong>Close Preview</strong> sit beside it.</p>
+<ul>
+  <li>With <code>syncServers.confirmDeletes</code> on, deletes are listed and confirmed first.</li>
+  <li>Deleting more than the site's delete limit, 50 files or 25 % of a side by default, needs the count typed back.</li>
+  <li>Mirroring from an empty folder is refused, as are deletes at the top of a server unless the server allows them.</li>
+  <li>Each file is checked again just before it moves; one that changed since the preview is skipped and reported.</li>
+  <li>Progress shows in a notification and in the status bar, such as <code>My Site: 12 of 37 files</code>, and Cancel stops between files.</li>
+</ul>
+<p>A notification reports the result, such as <code>Synchronized 36 files. 1 failed. 169 skipped.</code> A clean run closes the preview; a run with failures keeps them in the view with their reasons, and the status bar warns until you close it.</p>
+
+<h2 id="compare">Compare with Remote</h2>
+<p><strong>Compare with Remote</strong> fetches the server's copy into a read-only editor beside the local file, in VS Code's diff editor. For a binary or very large file it shows both copies' sizes, times and SHA-256 hashes, and says whether they match. The server's copy is held in memory only while its editor is open.</p>
+
+<h2 id="put-get">Put and Get</h2>
+<p><strong>Put</strong> and <strong>Get</strong> move the file open in the editor, the files chosen in the Explorer or the Remote Files view, or, from the Sites view, a whole site after a question. They go through the same plan and guards as Synchronize: a file that needs a decision, a held-back file or a delete opens the Sync Preview instead of moving, and Put asks to save open files with unsaved changes first.</p>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

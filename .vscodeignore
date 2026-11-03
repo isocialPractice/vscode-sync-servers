@@ -1,0 +1,10 @@
+# An allowlist: everything is left out of the .vsix, then the files the
+# extension ships are added back. `npm run pack:check` fails on anything else.
+**
+!out/extension.js
+!media/**
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+!THIRD_PARTY_NOTICES.md

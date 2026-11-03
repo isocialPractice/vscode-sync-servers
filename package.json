@@ -1,0 +1,698 @@
+{
+  "name": "vscode-sync-servers",
+  "displayName": "Sync Servers",
+  "description": "Synchronize a site's local folder with its SFTP, FTPS and FTP servers, with a preview of every change, in the manner of Dreamweaver's Synchronize. Sites are shared with the sync-servers command line.",
+  "version": "1.0.0-alpha.1.2.0",
+  "publisher": "isocialPractice",
+  "license": "MIT",
+  "preview": true,
+  "icon": "media/icon.png",
+  "homepage": "https://isocialpractice.github.io/vscode-sync-servers/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isocialPractice/vscode-sync-servers.git"
+  },
+  "bugs": {
+    "url": "https://github.com/isocialPractice/vscode-sync-servers/issues"
+  },
+  "keywords": [
+    "sync",
+    "synchronize",
+    "sftp",
+    "ftps",
+    "ftp",
+    "deploy",
+    "dreamweaver"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In Restricted Mode, files are never uploaded on save and every command that writes to a server asks first.",
+      "restrictedConfigurations": [
+        "syncServers.uploadOnSave.enabled",
+        "syncServers.confirmDeletes"
+      ]
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "syncServers",
+          "title": "Sync Servers",
+          "icon": "media/sync-servers.svg"
+        }
+      ]
+    },
+    "views": {
+      "syncServers": [
+        {
+          "id": "syncServers.sites",
+          "name": "Sites",
+          "icon": "media/sync-servers.svg"
+        },
+        {
+          "id": "syncServers.remoteFiles",
+          "name": "Remote Files",
+          "icon": "media/sync-servers.svg"
+        },
+        {
+          "id": "syncServers.preview",
+          "name": "Sync Preview",
+          "icon": "media/sync-servers.svg",
+          "when": "syncServers.previewActive"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "syncServers.sites",
+        "contents": "No sites yet. A site pairs a local folder with the servers it is published to.\n[Add Site](command:syncServers.addSite)\nSites are shared with the sync-servers command line, so a site added there is listed here too."
+      },
+      {
+        "view": "syncServers.remoteFiles",
+        "when": "!syncServers.hasActiveSite",
+        "contents": "No site is active. Switch to a site, or open its local folder, to list the files on its Remote server.\n[Switch Site](command:syncServers.switchSite)"
+      },
+      {
+        "view": "syncServers.remoteFiles",
+        "when": "syncServers.hasActiveSite && !syncServers.activeSiteHasRemote",
+        "contents": "The active site has no Remote server. Choose one in Site Settings.\n[Site Settings](command:syncServers.siteSettings)"
+      },
+      {
+        "view": "syncServers.remoteFiles",
+        "when": "syncServers.hasActiveSite && syncServers.activeSiteHasRemote",
+        "contents": "The root folder of the Remote server is empty.\n[Synchronize...](command:syncServers.synchronize)"
+      },
+      {
+        "view": "syncServers.preview",
+        "contents": "No preview is waiting. Synchronize a site to see every file that would change before anything moves.\n[Synchronize...](command:syncServers.synchronize)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "syncServers.addSite",
+        "title": "Add Site",
+        "category": "Sync Servers",
+        "icon": "$(add)"
+      },
+      {
+        "command": "syncServers.siteSettings",
+        "title": "Site Settings",
+        "category": "Sync Servers",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "syncServers.removeSite",
+        "title": "Remove Site",
+        "category": "Sync Servers",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "syncServers.switchSite",
+        "title": "Switch Site",
+        "category": "Sync Servers",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "syncServers.openSiteFolder",
+        "title": "Open Site Folder",
+        "category": "Sync Servers",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "syncServers.synchronize",
+        "title": "Synchronize...",
+        "category": "Sync Servers",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "syncServers.put",
+        "title": "Put",
+        "category": "Sync Servers",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "syncServers.get",
+        "title": "Get",
+        "category": "Sync Servers",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "syncServers.compareWithRemote",
+        "title": "Compare with Remote",
+        "category": "Sync Servers",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "syncServers.cloak",
+        "title": "Cloak",
+        "category": "Sync Servers",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "syncServers.uncloak",
+        "title": "Uncloak",
+        "category": "Sync Servers",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "syncServers.globalCloaking",
+        "title": "Global Cloaking Patterns...",
+        "category": "Sync Servers"
+      },
+      {
+        "command": "syncServers.testConnection",
+        "title": "Test Connection",
+        "category": "Sync Servers",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "syncServers.setPassword",
+        "title": "Set Password...",
+        "category": "Sync Servers",
+        "icon": "$(key)"
+      },
+      {
+        "command": "syncServers.forgetPassword",
+        "title": "Forget Password",
+        "category": "Sync Servers"
+      },
+      {
+        "command": "syncServers.resetSyncInformation",
+        "title": "Reset Sync Information",
+        "category": "Sync Servers",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "syncServers.showLog",
+        "title": "Show Log",
+        "category": "Sync Servers",
+        "icon": "$(output)"
+      },
+      {
+        "command": "syncServers.preview.synchronize",
+        "title": "Synchronize Checked Files",
+        "category": "Sync Servers",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "syncServers.preview.checkAll",
+        "title": "Check All",
+        "category": "Sync Servers",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "syncServers.preview.uncheckAll",
+        "title": "Uncheck All",
+        "category": "Sync Servers",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "syncServers.preview.useLocal",
+        "title": "Use Local",
+        "category": "Sync Servers",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "syncServers.preview.useRemote",
+        "title": "Use Remote",
+        "category": "Sync Servers",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "syncServers.preview.skip",
+        "title": "Skip",
+        "category": "Sync Servers",
+        "icon": "$(circle-slash)"
+      },
+      {
+        "command": "syncServers.preview.markSynchronized",
+        "title": "Mark Synchronized",
+        "category": "Sync Servers",
+        "icon": "$(pass)"
+      },
+      {
+        "command": "syncServers.preview.deleteRemote",
+        "title": "Delete on Server",
+        "category": "Sync Servers",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "syncServers.preview.deleteLocal",
+        "title": "Delete Local File",
+        "category": "Sync Servers",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "syncServers.preview.close",
+        "title": "Close Preview",
+        "category": "Sync Servers",
+        "icon": "$(close)"
+      },
+      {
+        "command": "syncServers.remote.refresh",
+        "title": "Refresh Remote Files",
+        "category": "Sync Servers",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "syncServers.remote.openReadOnly",
+        "title": "Open Read-Only",
+        "category": "Sync Servers",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "syncServers.remote.delete",
+        "title": "Delete on Server",
+        "category": "Sync Servers",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "syncServers.preview.synchronize",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.checkAll",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.uncheckAll",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.useLocal",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.useRemote",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.skip",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.markSynchronized",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.deleteRemote",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.deleteLocal",
+          "when": "syncServers.previewPending"
+        },
+        {
+          "command": "syncServers.preview.close",
+          "when": "syncServers.previewActive"
+        },
+        {
+          "command": "syncServers.remote.refresh",
+          "when": "focusedView == syncServers.remoteFiles"
+        },
+        {
+          "command": "syncServers.remote.openReadOnly",
+          "when": "focusedView == syncServers.remoteFiles"
+        },
+        {
+          "command": "syncServers.remote.delete",
+          "when": "focusedView == syncServers.remoteFiles"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "syncServers.put",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@1"
+        },
+        {
+          "command": "syncServers.get",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@2"
+        },
+        {
+          "command": "syncServers.compareWithRemote",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file && !explorerResourceIsFolder",
+          "group": "7_syncServers@3"
+        },
+        {
+          "command": "syncServers.synchronize",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@4"
+        },
+        {
+          "command": "syncServers.cloak",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@5"
+        },
+        {
+          "command": "syncServers.uncloak",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@6"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "syncServers.put",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@1"
+        },
+        {
+          "command": "syncServers.get",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@2"
+        },
+        {
+          "command": "syncServers.compareWithRemote",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@3"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "syncServers.put",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@1"
+        },
+        {
+          "command": "syncServers.get",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@2"
+        },
+        {
+          "command": "syncServers.compareWithRemote",
+          "when": "syncServers.workspaceIsSite && resourceScheme == file",
+          "group": "7_syncServers@3"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "syncServers.remote.refresh",
+          "when": "view == syncServers.remoteFiles && syncServers.activeSiteHasRemote",
+          "group": "navigation@1"
+        },
+        {
+          "command": "syncServers.preview.synchronize",
+          "when": "view == syncServers.preview && syncServers.previewPending",
+          "group": "navigation@1"
+        },
+        {
+          "command": "syncServers.preview.checkAll",
+          "when": "view == syncServers.preview && syncServers.previewPending",
+          "group": "navigation@2"
+        },
+        {
+          "command": "syncServers.preview.uncheckAll",
+          "when": "view == syncServers.preview && syncServers.previewPending",
+          "group": "navigation@3"
+        },
+        {
+          "command": "syncServers.preview.close",
+          "when": "view == syncServers.preview",
+          "group": "navigation@9"
+        },
+        {
+          "command": "syncServers.addSite",
+          "when": "view == syncServers.sites",
+          "group": "navigation@1"
+        },
+        {
+          "command": "syncServers.switchSite",
+          "when": "view == syncServers.sites && syncServers.hasSites",
+          "group": "navigation@2"
+        },
+        {
+          "command": "syncServers.showLog",
+          "when": "view == syncServers.sites",
+          "group": "z_log"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "syncServers.synchronize",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "inline@1"
+        },
+        {
+          "command": "syncServers.siteSettings",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "inline@2"
+        },
+        {
+          "command": "syncServers.synchronize",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "1_sync@1"
+        },
+        {
+          "command": "syncServers.put",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "1_sync@2"
+        },
+        {
+          "command": "syncServers.get",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "1_sync@3"
+        },
+        {
+          "command": "syncServers.switchSite",
+          "when": "view == syncServers.sites && viewItem == site",
+          "group": "2_site@1"
+        },
+        {
+          "command": "syncServers.openSiteFolder",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "2_site@2"
+        },
+        {
+          "command": "syncServers.testConnection",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "2_site@3"
+        },
+        {
+          "command": "syncServers.siteSettings",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "3_settings@1"
+        },
+        {
+          "command": "syncServers.resetSyncInformation",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "3_settings@2"
+        },
+        {
+          "command": "syncServers.removeSite",
+          "when": "view == syncServers.sites && viewItem =~ /^site\\b/",
+          "group": "9_remove@1"
+        },
+        {
+          "command": "syncServers.testConnection",
+          "when": "view == syncServers.sites && viewItem =~ /^server\\b/",
+          "group": "inline@1"
+        },
+        {
+          "command": "syncServers.testConnection",
+          "when": "view == syncServers.sites && viewItem =~ /^server\\b/",
+          "group": "1_server@1"
+        },
+        {
+          "command": "syncServers.setPassword",
+          "when": "view == syncServers.sites && viewItem =~ /^server\\b.*\\bsecret\\b/",
+          "group": "2_password@1"
+        },
+        {
+          "command": "syncServers.forgetPassword",
+          "when": "view == syncServers.sites && viewItem =~ /^server\\b.*\\bsecret\\b/",
+          "group": "2_password@2"
+        },
+        {
+          "command": "syncServers.resetSyncInformation",
+          "when": "view == syncServers.sites && viewItem =~ /^server\\b/",
+          "group": "3_settings@1"
+        },
+        {
+          "command": "syncServers.preview.useLocal",
+          "when": "view == syncServers.preview && viewItem =~ /\\baction-resolve\\b/ && viewItem =~ /\\bcan-put\\b/",
+          "group": "inline@1"
+        },
+        {
+          "command": "syncServers.preview.useRemote",
+          "when": "view == syncServers.preview && viewItem =~ /\\baction-resolve\\b/ && viewItem =~ /\\bcan-get\\b/",
+          "group": "inline@2"
+        },
+        {
+          "command": "syncServers.preview.skip",
+          "when": "view == syncServers.preview && viewItem =~ /\\baction-resolve\\b/",
+          "group": "inline@3"
+        },
+        {
+          "command": "syncServers.compareWithRemote",
+          "when": "view == syncServers.preview && viewItem =~ /^row\\b.*\\bhas-remote\\b/",
+          "group": "inline@4"
+        },
+        {
+          "command": "syncServers.preview.useLocal",
+          "when": "view == syncServers.preview && viewItem =~ /\\bcan-put\\b/",
+          "group": "1_action@1"
+        },
+        {
+          "command": "syncServers.preview.useRemote",
+          "when": "view == syncServers.preview && viewItem =~ /\\bcan-get\\b/",
+          "group": "1_action@2"
+        },
+        {
+          "command": "syncServers.preview.skip",
+          "when": "view == syncServers.preview && viewItem =~ /\\bcan-skip\\b/",
+          "group": "1_action@3"
+        },
+        {
+          "command": "syncServers.preview.markSynchronized",
+          "when": "view == syncServers.preview && viewItem =~ /\\bcan-synced\\b/",
+          "group": "1_action@4"
+        },
+        {
+          "command": "syncServers.compareWithRemote",
+          "when": "view == syncServers.preview && viewItem =~ /^row\\b.*\\bhas-remote\\b/",
+          "group": "2_compare@1"
+        },
+        {
+          "command": "syncServers.preview.deleteRemote",
+          "when": "view == syncServers.preview && viewItem =~ /\\bcan-delete-remote\\b/",
+          "group": "3_delete@1"
+        },
+        {
+          "command": "syncServers.preview.deleteLocal",
+          "when": "view == syncServers.preview && viewItem =~ /\\bcan-delete-local\\b/",
+          "group": "3_delete@2"
+        },
+        {
+          "command": "syncServers.get",
+          "when": "view == syncServers.remoteFiles && viewItem =~ /^remote (file|dir)\\b/",
+          "group": "inline@1"
+        },
+        {
+          "command": "syncServers.remote.openReadOnly",
+          "when": "view == syncServers.remoteFiles && viewItem =~ /^remote file\\b/",
+          "group": "1_open@1"
+        },
+        {
+          "command": "syncServers.compareWithRemote",
+          "when": "view == syncServers.remoteFiles && viewItem =~ /^remote file\\b/",
+          "group": "1_open@2"
+        },
+        {
+          "command": "syncServers.get",
+          "when": "view == syncServers.remoteFiles && viewItem =~ /^remote (file|dir)\\b/",
+          "group": "2_transfer@1"
+        },
+        {
+          "command": "syncServers.cloak",
+          "when": "view == syncServers.remoteFiles && viewItem =~ /^remote (file|dir)\\b/ && viewItem =~ /^(?!.*\\bcloaked\\b)/",
+          "group": "3_cloak@1"
+        },
+        {
+          "command": "syncServers.uncloak",
+          "when": "view == syncServers.remoteFiles && viewItem =~ /\\bcloaked\\b/",
+          "group": "3_cloak@2"
+        },
+        {
+          "command": "syncServers.remote.delete",
+          "when": "view == syncServers.remoteFiles && viewItem =~ /^remote file\\b/",
+          "group": "9_delete@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Sync Servers",
+      "properties": {
+        "syncServers.configDir": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "markdownDescription": "The folder holding `sites.json`, the list of sites shared with the `sync-servers` command line. Empty uses the command line's own folder: `%APPDATA%\\sync-servers` on Windows, `~/Library/Application Support/sync-servers` on macOS and `$XDG_CONFIG_HOME/sync-servers` elsewhere, or `SYNC_SERVERS_HOME` when it is set."
+        },
+        "syncServers.uploadOnSave.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Puts a saved file to the servers whose **Upload on save** option is on. Turn this off to stop every upload on save at once. Never applies in Restricted Mode."
+        },
+        "syncServers.preview.groupBy": {
+          "type": "string",
+          "default": "action",
+          "enum": [
+            "action",
+            "folder"
+          ],
+          "enumDescriptions": [
+            "Groups the Sync Preview rows by what will happen to them: Resolve, Put, Get, Delete and so on.",
+            "Groups the Sync Preview rows by their folder."
+          ],
+          "description": "How the Sync Preview view groups its rows."
+        },
+        "syncServers.confirmDeletes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Asks before any delete runs, in addition to the preview."
+        },
+        "syncServers.decorations.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Marks cloaked files, files changed since the last sync and files that need a decision in the Explorer."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mts",
+    "watch": "node scripts/build.mts --watch",
+    "typecheck": "tsc -p tsconfig.json && tsc -p src/webview/browser/tsconfig.json",
+    "lint": "eslint .",
+    "test": "npm run test:unit && npm run test:docs && npm run test:integration",
+    "test:unit": "node scripts/build.mts --tests && node --test \"out/test/unit/**/*.test.js\"",
+    "test:integration": "node scripts/build.mts --tests && vscode-test",
+    "test:docs": "node scripts/build.mts --docs-tests && node --test \"out/test/docs/**/*.test.js\"",
+    "docs:site": "node scripts/build-site.mts",
+    "release:check": "node scripts/release-check.mts",
+    "icon": "node scripts/draw-icon.mts",
+    "notices": "node scripts/build.mts && node scripts/notices.mts",
+    "package": "node scripts/build.mts --production && vsce package --no-dependencies",
+    "pack:check": "node scripts/build.mts --production && node scripts/pack-check.mts"
+  },
+  "dependencies": {
+    "@isocialpractice/cmd-sync-servers": "1.0.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.20.5",
+    "@types/vscode": "1.101.0",
+    "@vscode/test-cli": "0.0.15",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.1.0",
+    "esbuild": "0.28.2",
+    "eslint": "10.13.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1"
+  },
+  "overrides": {
+    "mocha": {
+      "diff": "8.0.4",
+      "serialize-javascript": "7.1.4"
+    }
+  }
+}

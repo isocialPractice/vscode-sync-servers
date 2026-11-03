@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Every category of the Site Settings form in Sync Servers for VS Code: the site, its servers, local info, cloaking, synchronization and security.">
+<title>Site Settings | Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="site-settings.html" aria-current="page">Site Settings</a></li>
+        <li><a href="synchronize.html">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html">Upload on save</a></li>
+        <li><a href="commands-and-settings.html">Commands and settings</a></li>
+        <li><a href="security-and-trust.html">Security and trust</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Site Settings</h1>
+<p class="lead">Dreamweaver's Site Setup as a form in the editor area: the categories on the left, the form of the chosen one on the right, and Revert, Cancel and Save below. Open it with <strong>Site Settings</strong> on a site in the Sites view, from the status bar menu, or from the Command Palette.</p>
+
+<h2 id="editing">How editing works</h2>
+<ul>
+  <li>The form edits a draft. Nothing reaches the list of sites until <strong>Save</strong>, or <kbd>Ctrl</kbd>+<kbd>S</kbd> (<kbd>Cmd</kbd>+<kbd>S</kbd> on macOS).</li>
+  <li><strong>Revert</strong> puts the saved settings back. <strong>Cancel</strong> closes the form, and asks first when there are changes.</li>
+  <li>Save checks the whole site with the engine's own rules. Each problem is shown under the field it belongs to and read out, and the category or server holding it is marked.</li>
+  <li>If the command line changed the site while the form was open, Save asks whether to save over that change or reload the form with it.</li>
+  <li>Passwords are never typed into the form. <strong>Set Password...</strong> asks in VS Code's own password box, and the form shows only <em>Saved</em> or <em>Not saved</em>.</li>
+</ul>
+
+<h2 id="site">Site</h2>
+<table>
+  <caption>The Site category</caption>
+  <thead><tr><th scope="col">Field</th><th scope="col">Holds</th></tr></thead>
+  <tbody>
+    <tr><td>Site name</td><td>The name you know the site by, such as <code>My Site</code>, different from your other sites ignoring case.</td></tr>
+    <tr><td>Local site folder</td><td>The folder on this computer that holds the site. <strong>Browse...</strong> opens the folder picker.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="servers">Servers</h2>
+<p>A table of the site's servers with their host and protocol. The <strong>Remote</strong> column chooses the server Synchronize uses; the <strong>Testing</strong> column chooses the server that receives uploads on save, and its last row, <em>No Testing server</em>, clears it. Choose a row with the radio button in its first column, then <strong>Add</strong>, <strong>Edit</strong>, <strong>Duplicate</strong>, <strong>Remove</strong> or <strong>Test</strong>. Server changes are saved with the site, so Revert brings back a removed server until you save.</p>
+
+<h3 id="basic">The Basic tab</h3>
+<table>
+  <caption>Basic server fields</caption>
+  <thead><tr><th scope="col">Field</th><th scope="col">Holds</th></tr></thead>
+  <tbody>
+    <tr><td>Server name</td><td>Unique within the site. Add Site names a server after its host, such as <code>sftp.example.com</code>; rename it here, such as <code>Production</code>.</td></tr>
+    <tr><td>Protocol</td><td>SFTP, FTPS with explicit or implicit TLS, FTP, or a local or network folder. The fields the protocol does not use are hidden.</td></tr>
+    <tr><td>Host and Port</td><td>The FTP or SFTP host your hosting panel shows, such as <code>sftp.example.com</code>; leave the port empty for the usual one. <code>host:port</code> typed in Host moves the port into Port when you test, browse or save.</td></tr>
+    <tr><td>User</td><td>Such as <code>demo-user</code>. Many hosts name FTP accounts in full, such as <code>demo-user@example.com</code>.</td></tr>
+    <tr><td>Sign in with</td><td>SFTP only: a password, a private key file, or the SSH agent. A key file is used where it is and never copied.</td></tr>
+    <tr><td>Allow plain FTP</td><td>FTP only, and needed for it: plain FTP sends the password and files in clear text.</td></tr>
+    <tr><td>Save password</td><td>Keeps the password in VS Code's secret storage; without it you are asked each time. <strong>Set Password...</strong> and <strong>Forget Password</strong> act on the saved server.</td></tr>
+    <tr><td>Root directory, or Folder</td><td>Where the site is published, such as <code>/var/www/my-site</code>; for a local or network folder, the folder itself. <strong>Browse...</strong> connects and lists the folders on the server, starting where your account opens: <strong>Use This Folder</strong> picks the one shown, <code>..</code> goes up, and a typed path goes straight there. Choosing <code>/</code> asks whether synchronizing may delete files there.</td></tr>
+  </tbody>
+</table>
+<p><strong>Test</strong> connects with the values the form shows, saved or not, signs in, checks that the root directory exists, and shows the result under the button. What the connection decides, such as another host the certificate covers or a host key you trusted, is written into the form; <strong>Save</strong> keeps it. A saved password is sent only while Protocol, Host, Port and User are the ones it was saved for; otherwise you are asked for it.</p>
+
+<h3 id="advanced">The Advanced tab</h3>
+<table>
+  <caption>Advanced server fields</caption>
+  <thead><tr><th scope="col">Field</th><th scope="col">Holds</th></tr></thead>
+  <tbody>
+    <tr><td>Web URL</td><td>The address of the site on this server, such as <code>https://www.example.com/</code>.</td></tr>
+    <tr><td>Upload on save</td><td>Puts a file to this server when you save it. See <a href="upload-on-save.html">Upload on save</a>.</td></tr>
+    <tr><td>Timeout (seconds)</td><td>How long to wait for the server, from 1 to 600.</td></tr>
+    <tr><td>IP version</td><td>Either, IPv4 only or IPv6 only.</td></tr>
+    <tr><td>Allow deletes at the top of the server</td><td>Deletes are refused while the root directory is <code>/</code> or a drive root, unless this is on.</td></tr>
+    <tr><td>Allow older SSH algorithms</td><td>SFTP only, for an old server that offers nothing newer. Every connection then warns in the log.</td></tr>
+    <tr><td>Certificate authority file, Certificate host name, Lowest TLS version</td><td>FTPS only: a PEM file of extra authorities for a privately signed certificate, the name to check it against, and TLS 1.2 or 1.3.</td></tr>
+    <tr><td>File permissions, Folder permissions</td><td>Set on uploaded files and created folders, such as <code>644</code> and <code>755</code>.</td></tr>
+    <tr><td>Host key</td><td>SFTP only: the pinned key and when it was pinned, with <strong>Forget Host Key</strong>. A key is pinned only by trusting it on connection, never typed in.</td></tr>
+    <tr><td>Trusted certificate</td><td>FTPS only: the SHA-256 fingerprint of a certificate you chose <strong>Trust and Remember</strong> for, with <strong>Forget Certificate</strong>. Like a host key, it is trusted only on connection, never typed in.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="local-info">Local Info</h2>
+<table>
+  <caption>The Local Info category</caption>
+  <thead><tr><th scope="col">Field</th><th scope="col">Holds</th></tr></thead>
+  <tbody>
+    <tr><td>Web URL</td><td>The local web address, such as <code>http://localhost:8080/</code>.</td></tr>
+    <tr><td>Case-sensitive names</td><td>Whether <code>Index.html</code> and <code>index.html</code> are different files in the local folder: ask the file system, yes or no.</td></tr>
+    <tr><td>Enable cache</td><td>Remembers file checksums between runs, so comparing by checksum is faster.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="cloaking">Cloaking</h2>
+<p>Cloaked files and folders are never scanned, listed, transferred or deleted, on either side. <strong>Enable cloaking</strong> turns them all on or off, the global patterns included. <strong>Use global patterns</strong> makes the site use the <a href="files-and-cloaking.html#global-cloaking">global cloaking patterns</a> before its own; it is on unless you turn it off. Patterns go one per line, or separated by spaces:</p>
+<table>
+  <caption>Cloaking patterns</caption>
+  <thead><tr><th scope="col">Pattern</th><th scope="col">Cloaks</th></tr></thead>
+  <tbody>
+    <tr><td><code>.psd</code></td><td>Every file whose name ends in <code>.psd</code>.</td></tr>
+    <tr><td><code>archive*</code></td><td>Any file or folder whose name starts with <code>archive</code>, at any depth.</td></tr>
+    <tr><td><code>node_modules/</code></td><td>Every folder of that name, with its contents.</td></tr>
+    <tr><td><code>/drafts/</code></td><td>The <code>drafts</code> folder at the top of the site only.</td></tr>
+    <tr><td><code>!keep.psd</code></td><td>Brings back a file an earlier pattern cloaked.</td></tr>
+  </tbody>
+</table>
+<p>As you type, the form counts the files and folders the patterns, the global ones included, cloak in the local folder. Below, <strong>Global patterns</strong> lists the patterns every site uses, with <strong>Edit Global Patterns...</strong>, and <strong>Cloaked paths</strong> lists the files and folders cloaked one by one with <strong>Cloak</strong> in the Explorer, each with <strong>Uncloak</strong>.</p>
+
+<h2 id="synchronization">Synchronization</h2>
+<table>
+  <caption>The Synchronization category</caption>
+  <thead><tr><th scope="col">Field</th><th scope="col">Default</th><th scope="col">Holds</th></tr></thead>
+  <tbody>
+    <tr><td>Maintain sync information</td><td>On</td><td>Keeps sync records, so a file changed on both sides waits for you.</td></tr>
+    <tr><td>Compare files by</td><td>Size and time</td><td>Or Checksum, which reads every file that might differ.</td></tr>
+    <tr><td>Time tolerance (seconds)</td><td>2</td><td>Server times closer than this count as equal.</td></tr>
+    <tr><td>Symbolic links</td><td>Skip them</td><td>Or Follow links inside the site, or Follow all links, including links to files and folders outside the site. A followed link is put and got as the file or folder it points to: a Get writes that file and keeps the link, and a linked file in the Explorer carries the mark of the file it points to. Links on the server are never followed.</td></tr>
+    <tr><td>Transfers at once</td><td>4</td><td>From 1 to 16.</td></tr>
+    <tr><td>Delete limit (files) and (percent)</td><td>50 and 25</td><td>Deleting more asks you to type the count.</td></tr>
+    <tr><td>Keep a recovery copy, for (days), size (MB)</td><td>On, 14, 1024</td><td>Local files that are deleted or overwritten are kept in the recovery folder first.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="security">Security</h2>
+<p><strong>Hold back sensitive files</strong> lists matching files unchecked in the preview, so they move only when you check them. <strong>Also hold back</strong> adds your own patterns to the built-in list, which <strong>Always held back</strong> shows: <code>.env</code>, private keys, and version-control and credential folders among them.</p>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Every command and setting of Sync Servers for VS Code.">
+<title>Commands and settings | Sync Servers for VS Code</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html">Sync Servers for VS Code</a>
+    <nav aria-label="Pages">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="site-settings.html">Site Settings</a></li>
+        <li><a href="synchronize.html">Synchronize</a></li>
+        <li><a href="files-and-cloaking.html">Files and cloaking</a></li>
+        <li><a href="upload-on-save.html">Upload on save</a></li>
+        <li><a href="commands-and-settings.html" aria-current="page">Commands and settings</a></li>
+        <li><a href="security-and-trust.html">Security and trust</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<h1>Commands and settings</h1>
+<p class="lead">Every command is in the Command Palette under <strong>Sync Servers</strong>, so everything works from the keyboard; the menus only add shortcuts to them. Run from the palette, a command acts on the active site, the file in the editor, or asks which site or server.</p>
+
+<h2 id="commands">Commands</h2>
+<table>
+  <caption>Commands</caption>
+  <thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead>
+  <tbody>
+    <tr><td>Add Site</td><td>Asks for a new site's name, local folder, and first server's Protocol, Host, User and password, then connects and lets you pick the root directory from what the server shows. See <a href="getting-started.html#add-site">Getting started</a>.</td></tr>
+    <tr><td>Site Settings</td><td>Opens the <a href="site-settings.html">settings form</a> of a site.</td></tr>
+    <tr><td>Remove Site</td><td>Removes a site from the list after a question, and forgets its saved passwords. Its files are not touched.</td></tr>
+    <tr><td>Switch Site</td><td>Makes another site active in this window.</td></tr>
+    <tr><td>Open Site Folder</td><td>Opens a site's local folder as the workspace, here or in a new window.</td></tr>
+    <tr><td>Synchronize...</td><td>The dialog, then the <a href="synchronize.html#preview">Sync Preview</a>.</td></tr>
+    <tr><td>Put</td><td>Uploads the file in the editor, the files chosen, or a whole site.</td></tr>
+    <tr><td>Get</td><td>Downloads them.</td></tr>
+    <tr><td>Compare with Remote</td><td>The server's copy beside the local file.</td></tr>
+    <tr><td>Cloak</td><td>Adds files and folders to the site's cloaked paths.</td></tr>
+    <tr><td>Uncloak</td><td>Takes them out again.</td></tr>
+    <tr><td>Global Cloaking Patterns...</td><td>Lists the cloaking patterns every site uses before its own, adds new ones, and removes one after a question. See <a href="files-and-cloaking.html#global-cloaking">Global cloaking patterns</a>.</td></tr>
+    <tr><td>Test Connection</td><td>Connects, signs in and lists the root folder of a server. A failure offers its fix: Choose Folder, Sign In Again or Edit Host.</td></tr>
+    <tr><td>Set Password...</td><td>Asks for a server's password, or key passphrase, and keeps it in VS Code's secret storage.</td></tr>
+    <tr><td>Forget Password</td><td>Removes it.</td></tr>
+    <tr><td>Reset Sync Information</td><td>Forgets the sync records of a site and server after a question; the next sync compares both sides from scratch.</td></tr>
+    <tr><td>Show Log</td><td>Opens the Sync Servers log.</td></tr>
+  </tbody>
+</table>
+
+<h3 id="preview-commands">While a preview waits</h3>
+<p>These join the palette while the Sync Preview holds a plan, and act on the rows chosen in it.</p>
+<table>
+  <caption>Sync Preview commands</caption>
+  <thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead>
+  <tbody>
+    <tr><td>Synchronize Checked Files</td><td>Runs the checked rows.</td></tr>
+    <tr><td>Check All</td><td>Checks every row that can be checked.</td></tr>
+    <tr><td>Uncheck All</td><td>Unchecks them.</td></tr>
+    <tr><td>Use Local</td><td>Puts the chosen rows.</td></tr>
+    <tr><td>Use Remote</td><td>Gets them.</td></tr>
+    <tr><td>Skip</td><td>Leaves them this time.</td></tr>
+    <tr><td>Mark Synchronized</td><td>Records both copies as in step without moving either.</td></tr>
+    <tr><td>Delete on Server</td><td>Deletes the server's copy of the chosen rows.</td></tr>
+    <tr><td>Delete Local File</td><td>Deletes the local copy, keeping it in the recovery folder while the site keeps recovery copies.</td></tr>
+    <tr><td>Close Preview</td><td>Closes the preview without moving anything.</td></tr>
+  </tbody>
+</table>
+
+<h3 id="remote-commands">In the Remote Files view</h3>
+<p>These are in the palette while the Remote Files view has focus, and act on the entry chosen in it.</p>
+<table>
+  <caption>Remote Files commands</caption>
+  <thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead>
+  <tbody>
+    <tr><td>Refresh Remote Files</td><td>Lists the open folders again.</td></tr>
+    <tr><td>Open Read-Only</td><td>The server's copy of a file in a read-only editor.</td></tr>
+    <tr><td>Delete on Server</td><td>Removes one file from the server after a question.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="settings">Settings</h2>
+<table>
+  <caption>Settings</caption>
+  <thead><tr><th scope="col">Setting</th><th scope="col">Default</th><th scope="col">Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>syncServers.configDir</code></td><td>empty</td><td>The folder holding <code>sites.json</code>. Empty uses the command line's folder. It can be set in your user settings only, so a workspace can never point the extension at another list.</td></tr>
+    <tr><td><code>syncServers.uploadOnSave.enabled</code></td><td><code>true</code></td><td>The one switch over every server's <a href="upload-on-save.html">Upload on save</a>.</td></tr>
+    <tr><td><code>syncServers.preview.groupBy</code></td><td><code>action</code></td><td>Groups the Sync Preview by <code>action</code> or by <code>folder</code>.</td></tr>
+    <tr><td><code>syncServers.confirmDeletes</code></td><td><code>true</code></td><td>Asks before any delete runs, in addition to the preview.</td></tr>
+    <tr><td><code>syncServers.decorations.enabled</code></td><td><code>true</code></td><td>The Explorer marks for cloaked, changed and conflicting files.</td></tr>
+  </tbody>
+</table>
+<p>In Restricted Mode, a workspace's own values for <code>syncServers.uploadOnSave.enabled</code> and <code>syncServers.confirmDeletes</code> are ignored. Sites and servers are not VS Code settings: they live in the list of sites shared with the command line.</p>
+</main>
+<footer class="site-footer">
+  <div class="inner">
+    <p>Sync Servers for VS Code is open source under the MIT license. Source, issues and releases are on <a href="https://github.com/isocialPractice/vscode-sync-servers">GitHub</a>. The engine and the command line are <a href="https://isocialpractice.github.io/cmd-sync-servers/">cmd-sync-servers</a>.</p>
+  </div>
+</footer>
+</body>
+</html>
