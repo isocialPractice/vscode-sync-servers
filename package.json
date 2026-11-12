@@ -669,6 +669,7 @@
     "release:check": "node scripts/release-check.mts",
     "icon": "node scripts/draw-icon.mts",
     "notices": "node scripts/build.mts && node scripts/notices.mts",
+    "pre:publish": "vsce package",
     "package": "node scripts/build.mts --production && vsce package --no-dependencies",
     "pack:check": "node scripts/build.mts --production && node scripts/pack-check.mts"
   },

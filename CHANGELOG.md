@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Until the first stable release, versions use the pre-release form
 `1.0.0-alpha.x.y.z`, where `x.y.z` counts alpha iterations toward `1.0.0`.
 
+## [Unreleased]
+
+### Fixed
+
+- Get finds the site of a file that is only on the server, from the
+  Explorer or Remote Files, when the site's folder is reached through a
+  symbolic link or a Windows short name.
+- Test in Site Settings finds a local folder server whose path holds a
+  Windows short name.
+- A change made in VS Code shows at once in the Sites view and the
+  Explorer marks: a reload of `sites.json` that ran at the same moment no
+  longer puts back the list from before the change.
+
+### Changed
+
+- The integration tests start VS Code with a short user data folder of
+  their own, so they run in a deep checkout on macOS, and run the command
+  line beside the extension host instead of blocking it.
+
 ## [1.0.0-alpha.1.2.0] - 2026-11-03
 
 ### Changed

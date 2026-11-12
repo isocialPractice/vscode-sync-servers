@@ -177,7 +177,7 @@ suite('Explorer, Remote Files and upload on save', () => {
     write(local, 'index.html', 'home');
     await api.model.setActive(site.id);
     try {
-      const added = syncServers('cloak', '--global', '*.lnk');
+      const added = await syncServers('cloak', '--global', '*.lnk');
       assert.equal(added.status, 0, added.stderr);
       await api.model.reload();
       assert.deepEqual(api.model.globalPatterns, ['*.lnk']);
@@ -196,7 +196,7 @@ suite('Explorer, Remote Files and upload on save', () => {
       prompter.answer({ add: true }, '.git/', undefined);
       await vscode.commands.executeCommand('syncServers.globalCloaking');
       assert.deepEqual(api.model.globalPatterns, ['*.lnk', '.git/']);
-      const listed = syncServers('cloak', '--global', '--json');
+      const listed = await syncServers('cloak', '--global', '--json');
       assert.deepEqual((JSON.parse(listed.stdout) as { patterns: string[] }).patterns, ['*.lnk', '.git/'], 'the command line lists them');
     } finally {
       prompter.answer({ remove: '*.lnk' }, REMOVE, { remove: '.git/' }, REMOVE, undefined);

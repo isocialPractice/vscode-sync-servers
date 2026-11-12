@@ -1,7 +1,7 @@
 // For integration tests, which run inside VS Code: the extension's test API,
 // the sync-servers command line as a child process, and waiting.
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import path from 'node:path';
 import type { SecretRef } from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
@@ -30,19 +30,44 @@ export async function testApi(): Promise<TestApi> {
   return api;
 }
 
-/** Runs the sync-servers command line on the extension host's own Node.js, with the same settings folder. */
-export function syncServers(...args: string[]): { status: number | null; stdout: string; stderr: string } {
-  const result = spawnSync(process.execPath, [CLI, ...args], {
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', SYNC_SERVERS_KEYRING: 'off' },
-    encoding: 'utf8',
-    timeout: 30_000,
+/** How a run of the command line ended; `status` is `null` when it was stopped. */
+export interface CliResult {
+  readonly status: number | null;
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
+/**
+ * Runs the sync-servers command line on the extension host's own Node.js,
+ * with the same settings folder. It runs beside the extension host, never
+ * blocking it: a blocked host keeps any file it was reading open, and on
+ * Windows that stops the command line from replacing `sites.json`.
+ */
+export function syncServers(...args: string[]): Promise<CliResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [CLI, ...args], {
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', SYNC_SERVERS_KEYRING: 'off' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 30_000,
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8').on('data', (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.setEncoding('utf8').on('data', (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (status) => {
+      resolve({ status, stdout, stderr });
+    });
   });
-  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
 /** The sites `sync-servers sites --json` lists. */
-export function listedSites(): ListedSite[] {
-  const result = syncServers('sites', '--json');
+export async function listedSites(): Promise<ListedSite[]> {
+  const result = await syncServers('sites', '--json');
   assert.equal(result.status, 0, result.stderr);
   return (JSON.parse(result.stdout) as { sites: ListedSite[] }).sites;
 }

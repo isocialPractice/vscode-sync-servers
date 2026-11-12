@@ -16,6 +16,7 @@ import { binarySummary, isBinary, type ComparedCopy } from '../preview/compare-t
 import type { PreviewController } from '../preview/controller.ts';
 import type { RemoteDocuments } from '../preview/remote-documents.ts';
 import { isPreviewRow, type PreviewNode, type PreviewView } from '../preview/view.ts';
+import { realPathOf } from '../real-path.ts';
 import { isRemoteNode } from '../remote/nodes.ts';
 import { isSitesNode } from '../views/sites-view.ts';
 import { chooseSite, requireSites, type Services } from './services.ts';
@@ -69,7 +70,11 @@ export function siteForFiles(services: Services, uris: readonly vscode.Uri[]): {
   let site: Site | undefined;
   const paths: string[] = [];
   for (const uri of uris) {
-    const found = registry.resolve({ path: uri.fsPath });
+    // The engine matches real paths, and it can only find one for a file
+    // that exists, so a file Get is about to download is matched through
+    // the real path of its folder.
+    const file = realPathOf(uri.fsPath);
+    const found = registry.resolve({ path: file }) ?? registry.resolve({ path: uri.fsPath });
     if (found === undefined) {
       return `${uri.fsPath} is not inside the local folder of any site.`;
     }
@@ -77,7 +82,7 @@ export function siteForFiles(services: Services, uris: readonly vscode.Uri[]): {
       return `The files belong to more than one site: "${site.name}" and "${found.name}". Choose files of one site.`;
     }
     site = found;
-    const relative = relativeIn(found.localRoot, uri.fsPath);
+    const relative = relativeIn(realPathOf(found.localRoot), file) ?? relativeIn(found.localRoot, uri.fsPath);
     if (relative !== undefined) {
       paths.push(relative);
     }

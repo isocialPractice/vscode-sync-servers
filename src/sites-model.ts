@@ -50,6 +50,44 @@ export class SitesModel implements vscode.Disposable {
   #activeSiteId: string | undefined;
   #watcher: vscode.FileSystemWatcher | undefined;
   #timer: NodeJS.Timeout | undefined;
+  /** Registry calls still running that return a promise; each of them writes `sites.json`. */
+  readonly #writes = new Set<Promise<unknown>>();
+  /** Counts those calls as they finish. */
+  #written = 0;
+  /** The reload running or last run; the next one waits for it. */
+  #reloads: Promise<void> = Promise.resolve();
+
+  /**
+   * The registry as callers get it: every call goes to the registry open
+   * now, so a reference kept across a reload still reaches the current
+   * list, and the calls that write are counted, so a reload never puts back
+   * a list read before one of them finished.
+   */
+  readonly #tracked: SiteRegistry = new Proxy(Object.create(SiteRegistry.prototype) as SiteRegistry, {
+    get: (_target, property) => {
+      const current = this.#registry;
+      if (current === undefined) {
+        throw new Error('The list of sites is not open yet.');
+      }
+      const value: unknown = Reflect.get(current, property, current);
+      if (typeof value !== 'function') {
+        return value;
+      }
+      return (...args: unknown[]): unknown => {
+        const result: unknown = Reflect.apply(value, current, args);
+        if (result instanceof Promise) {
+          const write: Promise<unknown> = result;
+          this.#writes.add(write);
+          const finished = (): void => {
+            this.#writes.delete(write);
+            this.#written += 1;
+          };
+          void write.then(finished, finished);
+        }
+        return result;
+      };
+    },
+  });
 
   /** Fires after the list or the active site changes. */
   readonly onDidChange = this.#changed.event;
@@ -103,7 +141,7 @@ export class SitesModel implements vscode.Disposable {
     if (this.#registry === undefined || this.#problem !== undefined) {
       throw this.invalidFile ? new SyncError('E_CONFIG_INVALID', this.#problem ?? '') : new Error(this.#problem ?? 'The list of sites is not open yet.');
     }
-    return this.#registry;
+    return this.#tracked;
   }
 
   /** Opens the list from the configured folder and starts watching it. */
@@ -136,21 +174,47 @@ export class SitesModel implements vscode.Disposable {
     this.refresh();
   }
 
-  /** Reads `sites.json` again. */
-  async reload(): Promise<void> {
+  /**
+   * Reads `sites.json` again, into a registry of its own: the registry in
+   * use is replaced only when no change made in this window ran during the
+   * read. A read that began before such a change finished may hold the list
+   * from before it, so the file is read again once the change is done.
+   * Reloads run one at a time, so a later one never loses to an earlier one.
+   */
+  reload(): Promise<void> {
+    const next = this.#reloads.then(() => this.#reloadOnce());
+    this.#reloads = next.catch(() => undefined);
+    return next;
+  }
+
+  async #reloadOnce(): Promise<void> {
     const registry = this.#registry;
     if (registry === undefined) {
       await this.open();
       return;
     }
-    try {
-      await registry.reload();
-      this.#problem = undefined;
-    } catch (error) {
-      this.#problem = problemText(error);
-      this.#invalidFile = isSyncError(error, 'E_CONFIG_INVALID');
-      this.#options.logger.error('The list of sites cannot be read', { file: registry.paths.sitesFile, problem: this.#problem });
-    }
+    let fresh: SiteRegistry;
+    let written: number;
+    do {
+      await Promise.allSettled(this.#writes);
+      written = this.#written;
+      try {
+        fresh = await SiteRegistry.open({ paths: registry.paths, logger: this.#options.logger });
+      } catch (error) {
+        if (this.#registry === registry) {
+          this.#problem = problemText(error);
+          this.#invalidFile = isSyncError(error, 'E_CONFIG_INVALID');
+          this.#options.logger.error('The list of sites cannot be read', { file: registry.paths.sitesFile, problem: this.#problem });
+          this.refresh();
+        }
+        return;
+      }
+      if (this.#registry !== registry) {
+        return;
+      }
+    } while (this.#writes.size > 0 || this.#written !== written);
+    this.#registry = fresh;
+    this.#problem = undefined;
     this.refresh();
   }
 
@@ -172,7 +236,7 @@ export class SitesModel implements vscode.Disposable {
   /** Records the site last chosen, which the command line's site list also opens on. */
   async recordLastSelected(siteId: string): Promise<void> {
     if (this.#registry !== undefined && this.#problem === undefined && this.#registry.lastSelectedSiteId !== siteId) {
-      await this.#registry.setLastSelected(siteId);
+      await this.#tracked.setLastSelected(siteId);
     }
   }
 

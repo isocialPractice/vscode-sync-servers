@@ -154,7 +154,7 @@ suite('Site Settings', () => {
     await panel.receive({ type: 'save', site: draft });
     assert.equal(last('saved').message, 'Saved "Sample App Renamed".');
     assert.deepEqual(api.model.site(siteId), siteSchema.parse(draft));
-    const listed = listedSites().find((site) => site.id === siteId);
+    const listed = (await listedSites()).find((site) => site.id === siteId);
     assert.equal(listed?.name, 'Sample App Renamed');
     assert.equal(listed.remoteServer?.name, 'Staging');
   });
@@ -185,7 +185,7 @@ suite('Site Settings', () => {
   });
 
   test('a change the command line made meanwhile is never overwritten without asking', async () => {
-    const edited = syncServers('site', 'edit', 'Sample App Renamed', '--name', 'Sample App Elsewhere');
+    const edited = await syncServers('site', 'edit', 'Sample App Renamed', '--name', 'Sample App Elsewhere');
     assert.equal(edited.status, 0, edited.stderr);
     await waitFor('the change from the command line', () => api.model.site(siteId)?.name === 'Sample App Elsewhere');
     const draft: SiteData = structuredClone(last('saved').site);

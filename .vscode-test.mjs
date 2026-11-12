@@ -8,12 +8,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // Each run gets its own empty settings folder, so the tests never read or
-// write the real list of sites, and one run never sees another's.
+// write the real list of sites, and one run never sees another's. It also
+// gets its own short user data folder: VS Code puts its IPC socket there,
+// and macOS refuses a socket path longer than 103 characters, which the
+// default one under .vscode-test/ in a deep checkout is.
 const run = (label, version) => ({
   label,
   version,
   files: 'out/test/integration/**/*.test.js',
-  launchArgs: ['--disable-extensions'],
+  launchArgs: ['--disable-extensions', `--user-data-dir=${mkdtempSync(join(tmpdir(), `ssv-${label}-`))}`],
   env: { SYNC_SERVERS_HOME: mkdtempSync(join(tmpdir(), `sync-servers-vscode-${label}-`)), SYNC_SERVERS_KEYRING: 'off' },
   mocha: { ui: 'tdd', timeout: 20000 },
 });

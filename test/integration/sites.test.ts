@@ -59,7 +59,7 @@ suite('Sites', () => {
   });
 
   test('a site added by the command line appears in the Sites view without a reload', async () => {
-    const added = syncServers('site', 'add', '--name', 'Acme Corp', '--local-root', folder('acme'));
+    const added = await syncServers('site', 'add', '--name', 'Acme Corp', '--local-root', folder('acme'));
     assert.equal(added.status, 0, added.stderr);
     await waitFor('Acme Corp in the Sites view', () => labels().includes('Acme Corp'));
   });
@@ -69,7 +69,7 @@ suite('Sites', () => {
     await vscode.commands.executeCommand('syncServers.addSite');
     assert.equal(prompter.remaining, 0);
     assert.equal(lastMessage(), 'Added "My Site" with the server my-site-backup.');
-    const listed = listedSites().find((site) => site.name === 'My Site');
+    const listed = (await listedSites()).find((site) => site.name === 'My Site');
     assert.equal(listed?.remoteServer?.name, 'my-site-backup');
     assert.ok(labels().includes('My Site'));
   });
@@ -137,7 +137,7 @@ suite('Sites', () => {
   });
 
   test('Set Password keeps the password in secret storage, tied to the server; Forget Password removes it', async () => {
-    const added = syncServers(
+    const added = await syncServers(
       'server', 'add', '--site', 'Acme Corp', '--name', 'Production', '--protocol', 'sftp',
       '--host', 'sftp.example.com', '--user', 'demo-user', '--remote-root', '/var/www/acme',
     );
@@ -194,12 +194,12 @@ suite('Sites', () => {
 
     prompter.answer(undefined);
     await vscode.commands.executeCommand('syncServers.removeSite', siteNode('Acme Corp'));
-    assert.ok(listedSites().some((site) => site.name === 'Acme Corp'), 'cancelled: still listed');
+    assert.ok((await listedSites()).some((site) => site.name === 'Acme Corp'), 'cancelled: still listed');
 
     prompter.answer(REMOVE_SITE);
     await vscode.commands.executeCommand('syncServers.removeSite', siteNode('Acme Corp'));
     assert.deepEqual(prompter.shown.slice(shown).filter((entry) => entry.kind === 'error'), []);
-    assert.ok(!listedSites().some((site) => site.name === 'Acme Corp'));
+    assert.ok(!(await listedSites()).some((site) => site.name === 'Acme Corp'));
     assert.ok(!labels().includes('Acme Corp'));
     const removal = api.logRecords.find((record) => record.message === 'Saved secrets of a removed site forgotten');
     assert.deepEqual(removal?.fields, { siteId: acme, servers: 1, forgotten: 1 });

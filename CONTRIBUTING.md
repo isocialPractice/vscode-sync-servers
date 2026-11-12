@@ -106,8 +106,10 @@ list of sites kept in `.tmp/home/`, so your own sites are never touched.
   `npm run test:integration -- --label stable` or `--label minimum` runs one
   of them. They point `SYNC_SERVERS_HOME` at a fresh temp folder and set
   `SYNC_SERVERS_KEYRING=off`, so no test reads or writes your real list of
-  sites. Close other VS Code windows of the same release first if the test
-  window refuses to start.
+  sites. Each run also starts VS Code with its own short user data folder
+  in the temp folder, so a VS Code window already open never takes over
+  the test window, and the IPC socket path stays within the 103 characters
+  macOS allows.
 - Everything the extension asks goes through the `Prompter` interface in
   `src/ui/prompt.ts`, so the flows behind the quick inputs and dialogs run
   without VS Code's UI. Tests answer with `ScriptedPrompter` from

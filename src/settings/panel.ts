@@ -8,6 +8,7 @@ import { SECRET_KINDS } from '../commands/sites.ts';
 import { errorText } from '../error-text.ts';
 import { ALLOW_DELETES, ROOT_DELETES_QUESTION } from '../flows/add-site.ts';
 import { pickRemoteRoot } from '../flows/remote-root.ts';
+import { realPathOf } from '../real-path.ts';
 import { fromWebviewSchema, toWebviewSchema, type Decisions, type FromWebview, type PickTarget, type ToWebview } from '../shared/messages.ts';
 import type { ServerData, SiteData } from '../shared/site-data.ts';
 import { sameData } from '../webview/state.ts';
@@ -379,7 +380,9 @@ export class SiteSettingsPanel implements vscode.Disposable {
       connected = decided;
       let found: boolean;
       try {
-        found = await probe.exists(server.remoteRoot);
+        // The probe refuses a folder named like a Windows short name, such as
+        // RUNNER~1 in a temp path, so a local folder is checked by its real path.
+        found = await probe.exists(server.protocol === 'local' ? realPathOf(server.remoteRoot) : server.remoteRoot);
       } finally {
         await probe.close();
       }
