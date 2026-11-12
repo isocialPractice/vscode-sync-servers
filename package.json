@@ -2,7 +2,7 @@
   "name": "vscode-sync-servers",
   "displayName": "Sync Servers",
   "description": "Synchronize a site's local folder with its SFTP, FTPS and FTP servers, with a preview of every change, in the manner of Dreamweaver's Synchronize. Sites are shared with the sync-servers command line.",
-  "version": "1.0.0-alpha.1.2.0",
+  "version": "1.0.0-alpha.1.2.1",
   "publisher": "isocialPractice",
   "license": "MIT",
   "preview": true,

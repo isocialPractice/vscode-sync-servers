@@ -25,7 +25,7 @@ Extensions view, choose **...** > **Install from VSIX...**, and pick the
 file. From a terminal:
 
 ```sh
-code --install-extension vscode-sync-servers-1.0.0-alpha.1.2.0.vsix
+code --install-extension vscode-sync-servers-1.0.0-alpha.1.2.1.vsix
 ```
 
 Requires VS Code 1.101 or later. Each release carries `SHA256SUMS`, an

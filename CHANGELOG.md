@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Until the first stable release, versions use the pre-release form
 `1.0.0-alpha.x.y.z`, where `x.y.z` counts alpha iterations toward `1.0.0`.
 
-## [Unreleased]
+## [1.0.0-alpha.1.2.1] - 2026-11-12
 
 ### Fixed
 
@@ -285,4 +285,5 @@ Until the first stable release, versions use the pre-release form
   outside its allowlist, and third-party notices for every bundled package.
 - Security policy, contribution guide and design language.
 
+[1.0.0-alpha.1.2.1]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.1.2.1
 [1.0.0-alpha.1.2.0]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.1.2.0
