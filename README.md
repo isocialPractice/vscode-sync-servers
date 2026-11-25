@@ -25,7 +25,7 @@ Extensions view, choose **...** > **Install from VSIX...**, and pick the
 file. From a terminal:
 
 ```sh
-code --install-extension vscode-sync-servers-1.0.0-alpha.1.2.1.vsix
+code --install-extension vscode-sync-servers-1.0.0-alpha.2.0.0.vsix
 ```
 
 Requires VS Code 1.101 or later. Each release carries `SHA256SUMS`, an
@@ -89,7 +89,10 @@ servers with a Basic and an Advanced tab each, and the Local Info,
 Cloaking, Synchronization and Security categories. Nothing changes until
 Save, and Revert puts the saved settings back. **Test** connects with the
 values the form shows before you save them, and **Browse...** beside the
-root directory lists the folders on the server.
+root directory lists the folders on the server. **Dreamweaver sync files**,
+under Synchronization, reads and updates the records Dreamweaver keeps in
+each folder as `_notes/dwsync.xml`, so a site Dreamweaver synchronized is
+in sync from its first preview; that file itself is never put or got.
 
 ## The Status Bar and the Commands
 

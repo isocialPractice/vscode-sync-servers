@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { siteCloak, SyncRecords, type Cloak, type Site } from '@isocialpractice/cmd-sync-servers';
+import { isDwsyncPath, siteCloak, SyncRecords, type Cloak, type Site } from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
 import { localEntry, markFor, type Mark } from './marks.ts';
 import type { PreviewController } from './preview/controller.ts';
@@ -23,9 +23,9 @@ export function sitePath(site: Site, file: string): string | undefined {
 }
 
 /**
- * The Explorer's marks for the active site: cloaked items dimmed with ⊘,
- * files changed since the last sync with ↑, files that need a decision with
- * ! in the warning colour. They are worked out again after every sync, on
+ * The Explorer's marks for the active site: cloaked items and Dreamweaver's
+ * `_notes/dwsync.xml` dimmed with ⊘, files changed since the last sync with
+ * ↑, files that need a decision with ! in the warning colour. They are worked out again after every sync, on
  * save and when the site changes, never on a timer and never from a server.
  */
 export class ExplorerMarks implements vscode.FileDecorationProvider, vscode.Disposable {
@@ -107,6 +107,7 @@ export class ExplorerMarks implements vscode.FileDecorationProvider, vscode.Disp
     }
     return markFor({
       side: 'local',
+      dwsync: info.isFile() && isDwsyncPath(relative, true),
       cloaked: known.cloak.isCloaked(relative, info.isDirectory()),
       conflict: this.#conflicts.has(relative),
       observed: info.isFile() ? { size: info.size, mtimeMs: info.mtimeMs } : undefined,

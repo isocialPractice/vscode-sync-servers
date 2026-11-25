@@ -147,6 +147,28 @@ export function splitHostPort(server: ServerData): string | undefined {
   return undefined;
 }
 
+/**
+ * The name Dreamweaver gives a server in `_notes/dwsync.xml` when the server
+ * sets none: the host, `/`, and the root directory ending in `/`, such as
+ * `sftp.example.com//var/www/my-site/`; for a local or network folder, the
+ * folder with `/` between its parts and at its end. The engine builds the
+ * same name; the page cannot load the engine, so it builds its own.
+ */
+export function builtDreamweaverName(server: Pick<ServerData, 'protocol' | 'host' | 'remoteRoot'>): string {
+  if (server.protocol === 'local') {
+    return `${server.remoteRoot.replaceAll('\\', '/').replace(/\/+$/, '')}/`;
+  }
+  return `${server.host ?? ''}/${server.remoteRoot.replace(/\/+$/, '')}/`;
+}
+
+/** The built name as a placeholder, once the server has what it is built from. */
+function dreamweaverPlaceholder(server: ServerData | undefined): string | undefined {
+  if (server === undefined || server.remoteRoot.trim() === '' || (!isLocal(server) && (server.host ?? '').trim() === '')) {
+    return undefined;
+  }
+  return builtDreamweaverName(server);
+}
+
 function authOf(server: ServerData): NonNullable<ServerData['auth']> {
   server.auth ??= { method: 'password', savePassword: false };
   return server.auth;
@@ -287,6 +309,18 @@ export const SITE_FIELDS: readonly Field[] = [
     get: (site) => site.sync.maintainInfo,
     set: (site, _server, value) => {
       site.sync.maintainInfo = value === true;
+    },
+  },
+  {
+    id: 'dreamweaver',
+    kind: 'checkbox',
+    place: 'sync',
+    label: fixed('Dreamweaver sync files'),
+    help: () => 'Reads and updates _notes/dwsync.xml in each folder, so Dreamweaver and this extension agree on what is in sync. Needs Maintain sync information.',
+    path: sitePath('sync.dreamweaver.enabled'),
+    get: (site) => site.sync.dreamweaver.enabled,
+    set: (site, _server, value) => {
+      site.sync.dreamweaver = { enabled: value === true };
     },
   },
   {
@@ -654,6 +688,29 @@ export const SERVER_FIELDS: readonly Field[] = [
     get: (_site, server) => serverOf(server).options.uploadOnSave,
     set: (_site, server, value) => {
       serverOf(server).options.uploadOnSave = value === true;
+    },
+  },
+  {
+    id: 'dreamweaverServer',
+    kind: 'text',
+    place: 'advanced',
+    label: fixed('Dreamweaver server name'),
+    help: (server) =>
+      server !== undefined && isLocal(server)
+        ? 'The name Dreamweaver gives this server in _notes/dwsync.xml, such as D:/Sites/my-site-testing/. Empty uses the name built from the folder.'
+        : 'The name Dreamweaver gives this server in _notes/dwsync.xml, such as 203.0.113.10//public_html/. Empty uses the name built from the host and the root directory.',
+    optional: true,
+    placeholder: dreamweaverPlaceholder,
+    path: serverPath('options.dreamweaverServer'),
+    get: (_site, server) => serverOf(server).options.dreamweaverServer ?? '',
+    set: (_site, server, value) => {
+      const target = serverOf(server);
+      const name = text(typeof value === 'string' ? value.trim() : value);
+      if (name === undefined) {
+        delete target.options.dreamweaverServer;
+      } else {
+        target.options.dreamweaverServer = name;
+      }
     },
   },
   {

@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Until the first stable release, versions use the pre-release form
 `1.0.0-alpha.x.y.z`, where `x.y.z` counts alpha iterations toward `1.0.0`.
 
+## [1.0.0-alpha.2.0.0] - 2026-11-24
+
+### Changed
+
+- **Breaking:** the extension runs the engine `2.0.0`, which writes
+  `sites.json` as schema version 2. A version 1 file is read, written back
+  as version 2 and kept as `sites.json.bak`. An older build of the
+  extension or of the command line then refuses the file with `Version 2
+  was written by a newer sync-servers. Update sync-servers to read it.`
+- **Breaking:** `_notes/dwsync.xml`, the file in which Dreamweaver keeps a
+  folder's synchronization records, is never put, got or deleted, on
+  either side and whatever the case of its name. Put and Get of that file
+  alone say so, saving it uploads nothing, and a copy already on a server
+  stays there.
+- The Explorer and the Remote Files view mark `_notes/dwsync.xml` with a
+  dimmed `⊘` and the tooltip `Dreamweaver's synchronization records: never
+  synchronized.`, never as a file waiting to be put or got.
+
+### Added
+
+- Dreamweaver sync files in Site Settings' Synchronization category, right
+  after Maintain sync information: a site with it on reads and updates the
+  synchronization records Dreamweaver keeps in each folder, so a site
+  Dreamweaver synchronized is in sync from its first preview and both
+  programs go on agreeing. Saving it on with Maintain sync information off
+  is refused on the field.
+- Dreamweaver server name on a server's Advanced tab: the name Dreamweaver
+  gives the server in its records, for a server it knew by another address
+  or folder spelling. Empty uses the name built from the host and the root
+  directory, which the field shows as its placeholder.
+
 ## [1.0.0-alpha.1.2.1] - 2026-11-12
 
 ### Fixed
@@ -285,5 +316,6 @@ Until the first stable release, versions use the pre-release form
   outside its allowlist, and third-party notices for every bundled package.
 - Security policy, contribution guide and design language.
 
+[1.0.0-alpha.2.0.0]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.2.0.0
 [1.0.0-alpha.1.2.1]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.1.2.1
 [1.0.0-alpha.1.2.0]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.1.2.0

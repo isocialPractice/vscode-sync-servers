@@ -181,3 +181,47 @@ test('a site that stops using the global patterns keeps the choice when saved', 
   assert.ok(result.kind === 'ok');
   assert.equal(result.site.cloaking.useGlobalPatterns, false);
 });
+
+describe('Dreamweaver sync files', () => {
+  test('the switch and the server name pass in both directions, and nothing beside them', () => {
+    const data = asData(site);
+    data.sync.dreamweaver = { enabled: true };
+    const [first] = data.servers;
+    assert.ok(first);
+    first.options.dreamweaverServer = '203.0.113.10//public_html/';
+    assert.equal(fromWebviewSchema.safeParse({ type: 'save', site: data }).success, true);
+    assert.equal(toWebviewSchema.safeParse({ type: 'load', site: data, passwordSaved: {}, builtInGuard: [], globalPatterns: [] }).success, true);
+    const malformed: unknown[] = [
+      { ...data, sync: { ...data.sync, dreamweaver: { enabled: 'yes' } } },
+      { ...data, sync: { ...data.sync, dreamweaver: { enabled: true, records: [] } } },
+      { ...data, servers: [{ ...first, options: { ...first.options, dreamweaverServer: 'x'.repeat(5000) } }] },
+    ];
+    for (const site of malformed) {
+      assert.equal(fromWebviewSchema.safeParse({ type: 'save', site }).success, false);
+    }
+  });
+
+  test('a save keeps both, and a server without a name of its own leaves it out', () => {
+    const draft = asData(site);
+    draft.sync.dreamweaver = { enabled: true };
+    const [first, second] = draft.servers;
+    assert.ok(first && second);
+    first.options.dreamweaverServer = '203.0.113.10//public_html/';
+    const result = checkSave(draft, site, [site], exists);
+    assert.ok(result.kind === 'ok');
+    assert.equal(result.site.sync.dreamweaver.enabled, true);
+    assert.equal(result.site.servers[0]?.options.dreamweaverServer, '203.0.113.10//public_html/');
+    assert.equal('dreamweaverServer' in (result.site.servers[1]?.options ?? {}), false);
+  });
+
+  test('the switch on with Maintain sync information off is a problem on the switch', () => {
+    const draft = asData(site);
+    draft.sync.maintainInfo = false;
+    draft.sync.dreamweaver = { enabled: true };
+    const result = checkSave(draft, site, [site], exists);
+    assert.ok(result.kind === 'problems');
+    assert.deepEqual(result.problems, [{ path: 'sync.dreamweaver.enabled', message: 'Dreamweaver sync files need Maintain sync information.' }]);
+    draft.sync.dreamweaver = { enabled: false };
+    assert.equal(checkSave(draft, site, [site], exists).kind, 'ok');
+  });
+});

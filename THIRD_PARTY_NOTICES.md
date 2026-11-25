@@ -6,7 +6,7 @@ the packages below. Each package's licence is reproduced in full.
 `npm run notices` writes this file from the bundles, and a unit test fails
 when it is out of date.
 
-## @isocialpractice/cmd-sync-servers 1.0.0
+## @isocialpractice/cmd-sync-servers 2.0.0
 
 Licence: MIT
 

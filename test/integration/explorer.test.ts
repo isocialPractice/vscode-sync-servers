@@ -8,7 +8,7 @@ import type { NewServer, Site } from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
 import { DELETE_ON_SERVER } from '../../src/commands/remote.ts';
 import { REMOVE } from '../../src/flows/global-cloaking.ts';
-import { PUT_ANYWAY } from '../../src/commands/sync.ts';
+import { DWSYNC_NEVER_TRANSFERRED, PUT_ANYWAY } from '../../src/commands/sync.ts';
 import { REMOTE_SCHEME } from '../../src/contributions.ts';
 import type { TestApi } from '../../src/extension.ts';
 import { SYNCHRONIZE_ANYWAY } from '../../src/preview/controller.ts';
@@ -278,6 +278,51 @@ suite('Explorer, Remote Files and upload on save', () => {
     const held = api.logRecords.filter((record) => record.message.startsWith('Not uploaded on save:')).map((record) => record.message);
     assert.ok(held.includes('Not uploaded on save: it is cloaked'));
     assert.ok(held.includes('Not uploaded on save: it matches the sensitive pattern ".env"'));
+  });
+
+  test("Dreamweaver's _notes/dwsync.xml is never marked to move, put, got or uploaded on save", async () => {
+    const { site, local, remote } = await newSite({ uploadOnSave: true });
+    const records = '<?xml version="1.0" encoding="utf-8" ?>\r\n<dwsync>\r\n</dwsync>';
+    write(local, 'index.html', 'v1');
+    write(local, '_notes/dwsync.xml', records);
+    await syncPut(site);
+    assert.equal(read(remote, 'index.html'), 'v1');
+    assert.equal(read(remote, '_notes/dwsync.xml'), undefined, 'Synchronize leaves it');
+    await api.model.setActive(site.id);
+    await api.marks.refresh();
+    write(local, '_notes/dwsync.xml', `${records} `, LATER);
+    const mark = api.marks.markOf(uri(local, '_notes/dwsync.xml'));
+    assert.equal(mark?.badge, '⊘');
+    assert.equal(mark.tooltip, "Dreamweaver's synchronization records: never synchronized.");
+    assert.equal(api.marks.provideFileDecoration(uri(local, '_notes/dwsync.xml'))?.color?.id, 'list.deemphasizedForeground');
+
+    const shown = prompter.messages.length;
+    await edit(uri(local, '_notes/dwsync.xml'), records);
+    await quiet();
+    assert.equal(read(remote, '_notes/dwsync.xml'), undefined, 'saving it uploads nothing');
+    assert.equal(prompter.messages.length, shown, 'and shows nothing');
+    assert.ok(api.logRecords.some((record) => record.message === "Not uploaded on save: it holds Dreamweaver's synchronization records"));
+
+    await vscode.commands.executeCommand('syncServers.put', uri(local, '_notes/dwsync.xml'));
+    assert.equal(lastMessage(), DWSYNC_NEVER_TRANSFERRED);
+    assert.equal(read(remote, '_notes/dwsync.xml'), undefined);
+
+    write(remote, '_notes/dwsync.xml', 'the server copy');
+    await vscode.commands.executeCommand('syncServers.get', uri(local, '_notes/dwsync.xml'));
+    assert.equal(lastMessage(), DWSYNC_NEVER_TRANSFERRED);
+    assert.equal(read(local, '_notes/dwsync.xml'), records, 'the local records stay');
+
+    api.remoteFiles.refresh();
+    const notes = ((await api.remoteFiles.getChildren()) as RemoteNode[]).find((node) => node.name === '_notes');
+    assert.ok(notes);
+    const [file] = (await api.remoteFiles.getChildren(notes)) as RemoteNode[];
+    assert.equal(file?.path, '_notes/dwsync.xml');
+    const item = await api.remoteFiles.getTreeItem(file);
+    assert.match(String(item.description), /⊘ never synchronized$/);
+    assert.ok(typeof item.tooltip === 'string' && item.tooltip.endsWith("Dreamweaver's synchronization records: never synchronized."));
+    await vscode.commands.executeCommand('syncServers.get', file);
+    assert.equal(lastMessage(), DWSYNC_NEVER_TRANSFERRED);
+    assert.equal(read(local, '_notes/dwsync.xml'), records);
   });
 
   test('the Testing server gets saved files when only its Upload on save is on', async () => {

@@ -197,6 +197,49 @@ local folder.
 - [x] The extension's checks, and the list of changed files
   - **Goal**: Resolve to [Phase L4, step 5](../cmd-sync-servers/.claude/prompts/symlinks-work.prompt.md#phase-l4-the-vs-code-extension)
 
+## Dreamweaver Sync Files
+
+Next version: major. The items make 1.0.0-alpha.2.0.0, built against the
+engine's 2.0.0, which reads and updates Dreamweaver's synchronization
+records.
+
+- [x] Install the engine and type check the extension against it
+  - **Goal**: Resolve to [Phase V1, step 1](.claude/prompts/use-dwsync-file.prompt.md#phase-v1-the-site-data-site-settings-and-the-file-marks)
+- [x] The version, the `.vsix` name and the changelog section
+  - **Goal**: Resolve to [Phase V1, step 2](.claude/prompts/use-dwsync-file.prompt.md#phase-v1-the-site-data-site-settings-and-the-file-marks)
+- [x] `sync.dreamweaver` and `options.dreamweaverServer` in the site data
+  - **Goal**: Resolve to [Phase V1, step 3](.claude/prompts/use-dwsync-file.prompt.md#phase-v1-the-site-data-site-settings-and-the-file-marks)
+- [x] Site Settings: the Dreamweaver sync files checkbox, the Dreamweaver
+      server name field, the save check and their tests
+  - **Goal**: Resolve to [Phase V1, step 4](.claude/prompts/use-dwsync-file.prompt.md#phase-v1-the-site-data-site-settings-and-the-file-marks)
+- [x] `_notes/dwsync.xml` never marked as waiting to move, and never put,
+      got or uploaded on save
+  - **Goal**: Resolve to [Phase V1, step 5](.claude/prompts/use-dwsync-file.prompt.md#phase-v1-the-site-data-site-settings-and-the-file-marks)
+- [x] Documents, changelog, the extension's checks and the commit
+  - **Goal**: Resolve to [Phase V1, step 6](.claude/prompts/use-dwsync-file.prompt.md#phase-v1-the-site-data-site-settings-and-the-file-marks)
+- [ ] Add Site: the questions in a folder with Dreamweaver's records, and
+      the take-over
+  - **Goal**: Resolve to [Phase V2, step 1](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
+- [ ] Synchronize saves what it found in sync, and Forget Sync Records can
+      remove Dreamweaver's entries too
+  - **Goal**: Resolve to [Phase V2, step 2](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
+- [ ] Documents and changelog
+  - **Goal**: Resolve to [Phase V2, step 3](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
+- [ ] The extension's checks and the commit
+  - **Goal**: Resolve to [Phase V2, step 4](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
+- [ ] The report
+  - **Goal**: Resolve to [Phase V2, step 5](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
+- [ ] Pin the engine's `2.0.0` from npm
+  - **Goal**: Resolve to [Phase V3, step 1](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
+- [ ] A clean install, the notices and the extension's checks
+  - **Goal**: Resolve to [Phase V3, step 2](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
+- [ ] Changelog, the date and the commit
+  - **Goal**: Resolve to [Phase V3, step 3](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
+- [ ] The report
+  - **Goal**: Resolve to [Phase V3, step 4](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
+- [ ] Close the plan
+  - **Goal**: Resolve to [Phase V3, step 5](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
+
 ## Later Roadmap - paused
 
 Waits until both alphas are public; each item then becomes its own section.

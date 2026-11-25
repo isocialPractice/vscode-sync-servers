@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
+  isDwsyncPath,
   isSyncError,
   resultLine,
   SyncSession,
@@ -40,6 +41,9 @@ export const SAVE_AND_PUT = 'Save and Put';
 
 /** The button that puts from an untrusted workspace. */
 export const PUT_ANYWAY = 'Put Anyway';
+
+/** Said when Put or Get is asked for `_notes/dwsync.xml` files alone. */
+export const DWSYNC_NEVER_TRANSFERRED = "Dreamweaver's synchronization records are never put or got.";
 
 /** The local file a command argument stands for: a file Uri, or a row of the Remote Files view. */
 export function uriOf(value: unknown): vscode.Uri | undefined {
@@ -261,6 +265,10 @@ export async function transfer(services: SyncServices, direction: 'put' | 'get',
     }
     site = found.site;
     paths = found.paths;
+    if (paths.length > 0 && paths.every((target) => isDwsyncPath(target, true))) {
+      void services.prompter().inform(DWSYNC_NEVER_TRANSFERRED);
+      return;
+    }
   }
   const server = remoteOf(services, site);
   if (server === undefined) {

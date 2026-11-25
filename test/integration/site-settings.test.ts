@@ -125,6 +125,7 @@ suite('Site Settings', () => {
     draft.cloaking = { enabled: false, patterns: ['.psd', 'node_modules/'], paths: ['drafts'] };
     draft.sync = {
       maintainInfo: false,
+      dreamweaver: { enabled: false },
       compare: 'checksum',
       mtimeToleranceSeconds: 3,
       symlinks: 'follow-inside-root',
@@ -143,6 +144,7 @@ suite('Site Settings', () => {
       allowRootDeletes: true,
       legacyAlgorithms: true,
       uploadOnSave: true,
+      dreamweaverServer: '203.0.113.10//var/www/sample-app/',
       remoteFileMode: '644',
       remoteDirMode: '755',
     };
@@ -157,6 +159,46 @@ suite('Site Settings', () => {
     const listed = (await listedSites()).find((site) => site.id === siteId);
     assert.equal(listed?.name, 'Sample App Renamed');
     assert.equal(listed.remoteServer?.name, 'Staging');
+  });
+
+  test('Dreamweaver sync files and the Dreamweaver server name survive a save', async () => {
+    const draft: SiteData = structuredClone(last('saved').site);
+    const [production] = draft.servers;
+    assert.ok(production);
+    draft.sync.maintainInfo = true;
+    draft.sync.dreamweaver = { enabled: true };
+    production.options.dreamweaverServer = '203.0.113.10//public_html/';
+    await panel.receive({ type: 'save', site: draft });
+    assert.equal(last('saved').message, 'Saved "Sample App Renamed".');
+    const saved = api.model.site(siteId);
+    assert.equal(saved?.sync.dreamweaver.enabled, true);
+    assert.equal(saved.servers[0]?.options.dreamweaverServer, '203.0.113.10//public_html/');
+    assert.match(sitesFile(), /"dreamweaverServer": "203\.0\.113\.10\/\/public_html\/"/);
+    const shown = await syncServers('site', 'show', 'Sample App Renamed');
+    assert.equal(shown.status, 0, shown.stderr);
+    assert.match(shown.stdout, /Dreamweaver\W+on\b/);
+
+    const cleared: SiteData = structuredClone(last('saved').site);
+    delete cleared.servers[0]?.options.dreamweaverServer;
+    await panel.receive({ type: 'save', site: cleared });
+    assert.equal(api.model.site(siteId)?.servers[0]?.options.dreamweaverServer, undefined);
+    assert.doesNotMatch(sitesFile(), /dreamweaverServer/);
+  });
+
+  test('Dreamweaver sync files without Maintain sync information is refused on the checkbox', async () => {
+    const file = sitesFile();
+    const draft: SiteData = structuredClone(last('saved').site);
+    draft.sync.maintainInfo = false;
+    draft.sync.dreamweaver = { enabled: true };
+    await panel.receive({ type: 'save', site: draft });
+    assert.deepEqual(last('problems').problems, [{ path: 'sync.dreamweaver.enabled', message: 'Dreamweaver sync files need Maintain sync information.' }]);
+    assert.equal(sitesFile(), file);
+
+    const off: SiteData = structuredClone(last('saved').site);
+    off.sync.maintainInfo = false;
+    off.sync.dreamweaver = { enabled: false };
+    await panel.receive({ type: 'save', site: off });
+    assert.equal(api.model.site(siteId)?.sync.dreamweaver.enabled, false);
   });
 
   test('a save with problems names each field and changes nothing', async () => {

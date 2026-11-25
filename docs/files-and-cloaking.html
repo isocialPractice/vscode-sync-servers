@@ -38,11 +38,22 @@
   <thead><tr><th scope="col">Mark</th><th scope="col">Means</th></tr></thead>
   <tbody>
     <tr><td><code>⊘</code>, dimmed</td><td>Cloaked: never synchronized.</td></tr>
+    <tr><td><code>⊘</code>, dimmed, on <code>_notes/dwsync.xml</code></td><td>Dreamweaver's synchronization records: never synchronized.</td></tr>
     <tr><td><code>↑</code></td><td>Changed or added since the last sync. Put uploads it.</td></tr>
     <tr><td><code>!</code>, warning colour</td><td>Changed locally and on the server since the last sync. Synchronize to choose which copy to keep. The colour carries up to its folders.</td></tr>
   </tbody>
 </table>
 <p>Every mark has a tooltip. They show only for the active site, and only once it has been synchronized, so a new site is not covered in arrows. They come from the records of the last sync and the last preview, worked out again after every sync and on save, never on a timer and never by asking a server. <code>syncServers.decorations.enabled</code> turns them off.</p>
+
+<h2 id="dreamweaver-records">Dreamweaver's synchronization records</h2>
+<p>Dreamweaver keeps the synchronization records of each folder of a site in that folder's <code>_notes/dwsync.xml</code>. The file names the server, its folder there and the site's files, and it belongs to one computer, so it is never a file of the site, on either side and whatever the case of its name, with or without a cloaking pattern:</p>
+<ul>
+  <li>Synchronize never lists it, so it is never put, got or deleted, and a copy already on a server stays there.</li>
+  <li><strong>Put</strong> and <strong>Get</strong> of that file alone leave it and say <em>Dreamweaver's synchronization records are never put or got.</em></li>
+  <li>Saving it uploads nothing and shows nothing, whatever the server's <strong>Upload on save</strong> says.</li>
+  <li>The Explorer and the Remote Files view mark it <code>⊘</code>, dimmed, and never with <code>↑</code> or <code>↓</code>.</li>
+</ul>
+<p>Other files in <code>_notes</code>, such as Design Notes, follow cloaking like any other file. Whether the extension reads and updates the records is <a href="site-settings.html#dreamweaver">Dreamweaver sync files</a> in Site Settings.</p>
 
 <h2 id="menus">Explorer and editor menus</h2>
 <p>When the open workspace is inside the active site's local folder, the Explorer's context menu offers <strong>Put</strong>, <strong>Get</strong>, <strong>Compare with Remote</strong> (files only), <strong>Synchronize...</strong>, <strong>Cloak</strong> and <strong>Uncloak</strong>, for one file or several chosen together. The editor's context menu and its tab's offer Put, Get and Compare with Remote. Every one of them is also in the Command Palette, acting on the file in the editor.</p>
@@ -54,7 +65,7 @@
 <p>Files that belong to no site, such as <code>.git/</code>, <code>node_modules/</code> or <code>Thumbs.db</code>, can be cloaked once for every site. <strong>Sync Servers: Global Cloaking Patterns...</strong> lists them: <strong>Add Patterns...</strong> takes new ones, separated by spaces, and choosing a pattern removes it after a question. Every site uses the global patterns before its own, so a site's <code>!pattern</code> brings back what a global pattern cloaks, and a site can turn them off with <strong>Use global patterns</strong> in <a href="site-settings.html#cloaking">Site Settings</a>. They are kept in the list of sites, so <code>sync-servers cloak --global</code> on the command line changes the same patterns, and the Explorer marks follow at once.</p>
 
 <h2 id="remote-files">The Remote Files view</h2>
-<p>The Remote Files view lists the active site's Remote server, one folder at a time as you open them, so a large server is never listed whole. Files changed or added on the server since the last sync carry <code>↓</code>; cloaked ones carry <code>⊘</code>. Clicking a file opens it read-only.</p>
+<p>The Remote Files view lists the active site's Remote server, one folder at a time as you open them, so a large server is never listed whole. Files changed or added on the server since the last sync carry <code>↓</code>; cloaked ones, and <code>_notes/dwsync.xml</code>, carry <code>⊘</code>. Clicking a file opens it read-only.</p>
 <table>
   <caption>Actions in the Remote Files view</caption>
   <thead><tr><th scope="col">Action</th><th scope="col">Does</th></tr></thead>

@@ -62,6 +62,7 @@ export const serverDataSchema = z.strictObject({
       .optional(),
     hostKey: hostKeyDataSchema.optional(),
     uploadOnSave: z.boolean(),
+    dreamweaverServer: text.optional(),
     remoteFileMode: text.optional(),
     remoteDirMode: text.optional(),
   }),
@@ -83,6 +84,7 @@ export const siteDataSchema = z.strictObject({
   cloaking: z.strictObject({ enabled: z.boolean(), useGlobalPatterns: z.boolean().optional(), patterns: list, paths: list }),
   sync: z.strictObject({
     maintainInfo: z.boolean(),
+    dreamweaver: z.strictObject({ enabled: z.boolean() }),
     compare: z.enum(['metadata', 'checksum']),
     mtimeToleranceSeconds: z.number(),
     symlinks: z.enum(LINK_POLICY_VALUES),

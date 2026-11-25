@@ -1,6 +1,7 @@
 import path from 'node:path';
 import {
   createTransport,
+  isDwsyncPath,
   isTransient,
   ROOT,
   siteCloak,
@@ -231,6 +232,7 @@ export class RemoteFilesView implements vscode.TreeDataProvider<Node>, vscode.Di
         ? undefined
         : markFor({
             side: 'remote',
+            dwsync: node.type === 'file' && isDwsyncPath(node.path, true),
             cloaked: siteCloak(browser.site, process.platform, this.#services.model.globalPatterns).isCloaked(node.path, folder),
             conflict: false,
             observed: node.type === 'file' ? { size: node.size, mtimeMs: node.mtimeMs } : undefined,

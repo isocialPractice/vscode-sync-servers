@@ -78,6 +78,7 @@
   <tbody>
     <tr><td>Web URL</td><td>The address of the site on this server, such as <code>https://www.example.com/</code>.</td></tr>
     <tr><td>Upload on save</td><td>Puts a file to this server when you save it. See <a href="upload-on-save.html">Upload on save</a>.</td></tr>
+    <tr><td>Dreamweaver server name</td><td>The name Dreamweaver gives this server in <code>_notes/dwsync.xml</code>, used by a site with <a href="#dreamweaver">Dreamweaver sync files</a> on. Empty uses the name built from the host and the root directory, which the field shows as its placeholder: the host, <code>/</code>, and the root directory ending in <code>/</code>, such as <code>sftp.example.com//var/www/my-site/</code>. For a local or network folder it is the folder with <code>/</code> between its parts and at its end, such as <code>D:/Sites/my-site-testing/</code>. Set it when Dreamweaver knew the server by another address or another spelling of the folder, such as <code>203.0.113.10//public_html/</code> for a server whose host here is <code>server1.hosting.example.net</code>. Names are compared without regard to case or a final <code>/</code>.</td></tr>
     <tr><td>Timeout (seconds)</td><td>How long to wait for the server, from 1 to 600.</td></tr>
     <tr><td>IP version</td><td>Either, IPv4 only or IPv6 only.</td></tr>
     <tr><td>Allow deletes at the top of the server</td><td>Deletes are refused while the root directory is <code>/</code> or a drive root, unless this is on.</td></tr>
@@ -121,6 +122,7 @@
   <thead><tr><th scope="col">Field</th><th scope="col">Default</th><th scope="col">Holds</th></tr></thead>
   <tbody>
     <tr><td>Maintain sync information</td><td>On</td><td>Keeps sync records, so a file changed on both sides waits for you.</td></tr>
+    <tr id="dreamweaver"><td>Dreamweaver sync files</td><td>Off</td><td>Reads and updates the synchronization records Dreamweaver keeps in each folder as <code>_notes/dwsync.xml</code>, so Dreamweaver and this extension agree on what is in sync. Needs Maintain sync information: saving it on with that off is refused, with the problem on this field. Turning it off deletes nothing; the files stay as they are. Each server is found in the records by its <a href="#advanced">Dreamweaver server name</a>.</td></tr>
     <tr><td>Compare files by</td><td>Size and time</td><td>Or Checksum, which reads every file that might differ.</td></tr>
     <tr><td>Time tolerance (seconds)</td><td>2</td><td>Server times closer than this count as equal.</td></tr>
     <tr><td>Symbolic links</td><td>Skip them</td><td>Or Follow links inside the site, or Follow all links, including links to files and folders outside the site. A followed link is put and got as the file or folder it points to: a Get writes that file and keeps the link, and a linked file in the Explorer carries the mark of the file it points to. Links on the server are never followed.</td></tr>

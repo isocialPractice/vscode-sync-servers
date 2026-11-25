@@ -5,9 +5,9 @@ import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, test } from 'node:test';
-import { DEFAULT_GUARD_PATTERNS, type Site } from '@isocialpractice/cmd-sync-servers';
+import { DEFAULT_GUARD_PATTERNS, dreamweaverServerName, serverSchema, type Site } from '@isocialpractice/cmd-sync-servers';
 import type { ToWebview } from '../../src/shared/messages.ts';
-import { applyProtocol, tidyTls, type Category } from '../../src/webview/fields.ts';
+import { applyProtocol, builtDreamweaverName, SITE_FIELDS, tidyTls, type Category } from '../../src/webview/fields.ts';
 import { isDirty, isSavedAsShown, loaded, receive, update, type Action, type State } from '../../src/webview/state.ts';
 import { view } from '../../src/webview/view.ts';
 import { textOf, walk, type VNode } from '../../src/webview/vnode.ts';
@@ -383,5 +383,91 @@ describe('global cloaking in the form', () => {
     const none = receive(state, { type: 'globalPatterns', patterns: [] }).state;
     assert.ok(none);
     assert.match(textOf(view(none)), /No global patterns yet\./);
+  });
+});
+
+describe('Dreamweaver sync files in the form', () => {
+  const advancedOf = (serverId: string): State => {
+    const state = act(act(act(start(), { type: 'navigate', category: 'servers' }), { type: 'select', serverId }), { type: 'editServer' });
+    return act(state, { type: 'tab', tab: 'advanced' });
+  };
+
+  test('the checkbox comes right after Maintain sync information and keeps its value through a save', () => {
+    const sync = SITE_FIELDS.filter((field) => field.place === 'sync').map((field) => field.id);
+    assert.equal(sync.indexOf('dreamweaver'), sync.indexOf('maintainInfo') + 1);
+    assert.equal(start().draft.sync.dreamweaver.enabled, false);
+    const on = edit(start(), 'dreamweaver', true);
+    assert.deepEqual(on.draft.sync.dreamweaver, { enabled: true });
+    assert.equal(isDirty(on), true);
+    const message = update(on, { type: 'save' }, undefined, randomUUID).messages[0];
+    assert.deepEqual(message?.type === 'save' ? message.site.sync.dreamweaver : undefined, { enabled: true });
+    const off = edit(on, 'dreamweaver', false);
+    assert.deepEqual(off.draft.sync.dreamweaver, { enabled: false });
+    assert.equal(isDirty(off), false);
+    const page = nodes(act(on, { type: 'navigate', category: 'sync' }));
+    const box = page.find((node) => node.attrs.id === 'f-dreamweaver');
+    assert.equal(box?.attrs.checked, true);
+    assert.equal(textOf(page.find((node) => node.tag === 'label' && node.attrs.for === 'f-dreamweaver') ?? ''), 'Dreamweaver sync files');
+    assert.match(textOf(page.find((node) => node.attrs.id === 'f-dreamweaver-help') ?? ''), /Needs Maintain sync information\.$/);
+  });
+
+  test('the server name is set, and an empty name clears it, so the built name is used', () => {
+    let state = edit(advancedOf(production.id), 'dreamweaverServer', '203.0.113.10//public_html/');
+    assert.equal(state.draft.servers[0]?.options.dreamweaverServer, '203.0.113.10//public_html/');
+    const message = update(state, { type: 'save' }, undefined, randomUUID).messages[0];
+    assert.equal(message?.type === 'save' ? message.site.servers[0]?.options.dreamweaverServer : undefined, '203.0.113.10//public_html/');
+    state = edit(state, 'dreamweaverServer', '  ');
+    assert.equal('dreamweaverServer' in (state.draft.servers[0]?.options ?? {}), false);
+    assert.equal(isDirty(state), false);
+  });
+
+  test('the field sits on the Advanced tab with the built name as its placeholder', () => {
+    const advanced = nodes(advancedOf(production.id));
+    const input = advanced.find((node) => node.attrs.id === 'f-dreamweaverServer');
+    assert.equal(input?.attrs.placeholder, 'sftp.example.com//var/www/my-site/');
+    assert.equal(
+      textOf(advanced.find((node) => node.tag === 'label' && node.attrs.for === 'f-dreamweaverServer') ?? '')
+        .replace('(optional)', '')
+        .trim(),
+      'Dreamweaver server name',
+    );
+    const basic = nodes(act(advancedOf(production.id), { type: 'tab', tab: 'basic' }));
+    assert.ok(!basic.some((node) => node.attrs.id === 'f-dreamweaverServer'));
+    const backup = site.servers[2];
+    assert.ok(backup);
+    const folder = nodes(advancedOf(backup.id)).find((node) => node.attrs.id === 'f-dreamweaverServer');
+    assert.equal(folder?.attrs.placeholder, dreamweaverServerName(backup));
+  });
+
+  test('the built name is the one the engine builds', () => {
+    const servers = [
+      { name: 'Production', protocol: 'ftps', host: 'server1.hosting.example.net', username: 'demo-user@example.com', remoteRoot: '/public_html' },
+      { name: 'Production', protocol: 'ftps', host: 'server1.hosting.example.net', remoteRoot: '/public_html/' },
+      { name: 'Production', protocol: 'ftp', host: '203.0.113.10', remoteRoot: '/', options: { allowInsecure: true } },
+      { name: 'Staging', protocol: 'local', remoteRoot: 'D:\\Sites\\my-site-testing' },
+      { name: 'Staging', protocol: 'local', remoteRoot: 'D:\\Sites\\my-site-testing\\' },
+      { name: 'Backup', protocol: 'local', remoteRoot: '/home/<user>/backups/my-site' },
+      { name: 'Production', protocol: 'sftp', host: 'sftp.example.com', username: 'demo-user', remoteRoot: '/var/www/my-site' },
+    ].map((server) => serverSchema.parse({ id: randomUUID(), ...server }));
+    for (const server of servers) {
+      assert.equal(builtDreamweaverName(server), dreamweaverServerName(server), `${server.protocol} ${server.remoteRoot}`);
+    }
+    assert.deepEqual(
+      [servers[0], servers[3], servers[6]].map((server) => (server === undefined ? '' : builtDreamweaverName(server))),
+      ['server1.hosting.example.net//public_html/', 'D:/Sites/my-site-testing/', 'sftp.example.com//var/www/my-site/'],
+    );
+  });
+
+  test('a problem with the checkbox opens Synchronization and marks it', () => {
+    const result = receive(start(), {
+      type: 'problems',
+      problems: [{ path: 'sync.dreamweaver.enabled', message: 'Dreamweaver sync files need Maintain sync information.' }],
+      message: 'Not saved: 1 problem needs fixing.',
+    });
+    assert.ok(result.state);
+    assert.equal(result.state.category, 'sync');
+    const box = nodes(result.state).find((node) => node.attrs.id === 'f-dreamweaver');
+    assert.equal(box?.attrs['aria-invalid'], 'true');
+    assert.match(textOf(nodes(result.state).find((node) => node.attrs.id === 'f-dreamweaver-problem') ?? ''), /need Maintain sync information/);
   });
 });

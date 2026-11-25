@@ -96,6 +96,7 @@ Native surfaces take theme colour ids, never values:
 | Use | Theme colour |
 | --- | --- |
 | Cloaked file in the Explorer | `list.deemphasizedForeground` |
+| Dreamweaver's `_notes/dwsync.xml` in the Explorer | `list.deemphasizedForeground` |
 | File that needs a decision | `list.warningForeground` |
 | Status bar item when rows wait for a decision or a run failed | `statusBarItem.warningBackground` with `statusBarItem.warningForeground` |
 | Remote and Testing badges in the Sites view | The tree's description text: no colour of its own |
@@ -217,6 +218,7 @@ The symbols match the command line's.
 | Meaning | Explorer badge | Preview row | Tooltip or status |
 | --- | --- | --- | --- |
 | Cloaked | `⊘`, dimmed name | Not listed | Cloaked: never synchronized. |
+| Dreamweaver's records, `_notes/dwsync.xml` | `⊘`, dimmed name | Not listed | Dreamweaver's synchronization records: never synchronized. |
 | Changed locally since the last sync | `↑` | `$(cloud-upload) Put` | Changed since the last sync. |
 | Changed on both sides | `!`, warning colour | `$(question) Resolve` | Changed locally and on the server since the last sync. Choose Put or Get. |
 | Will be downloaded | None | `$(cloud-download) Get` | The status text of the engine |

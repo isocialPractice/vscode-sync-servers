@@ -5,7 +5,7 @@
  * on both sides. Nothing here asks a server.
  */
 import { lstatSync, realpathSync, statSync, type Stats } from 'node:fs';
-import { isInside, siteCloak, siteGuard, type Observation, type Site, type SyncRecord } from '@isocialpractice/cmd-sync-servers';
+import { isDwsyncPath, isInside, siteCloak, siteGuard, type Observation, type Site, type SyncRecord } from '@isocialpractice/cmd-sync-servers';
 
 /**
  * Why a saved file is not put on save, or `undefined` when it goes to the
@@ -13,6 +13,9 @@ import { isInside, siteCloak, siteGuard, type Observation, type Site, type SyncR
  * every site uses before its own.
  */
 export function holdBack(site: Site, relative: string, globalPatterns: readonly string[] = []): string | undefined {
+  if (isDwsyncPath(relative, true)) {
+    return "it holds Dreamweaver's synchronization records";
+  }
   if (siteCloak(site, process.platform, globalPatterns).isCloaked(relative, false)) {
     return 'it is cloaked';
   }
@@ -32,6 +35,8 @@ export interface Mark {
 /** What is known about one file or folder. */
 export interface MarkInput {
   readonly side: 'local' | 'remote';
+  /** True for `_notes/dwsync.xml`, where Dreamweaver keeps a folder's synchronization records. */
+  readonly dwsync?: boolean;
   readonly cloaked: boolean;
   /** The last preview found it changed on both sides. */
   readonly conflict: boolean;
@@ -46,6 +51,7 @@ export interface MarkInput {
 }
 
 export const CLOAKED_MARK: Mark = { badge: '⊘', tooltip: 'Cloaked: never synchronized.', word: 'cloaked', tone: 'dim' };
+export const DWSYNC_MARK: Mark = { badge: '⊘', tooltip: "Dreamweaver's synchronization records: never synchronized.", word: 'never synchronized', tone: 'dim' };
 export const CONFLICT_MARK: Mark = {
   badge: '!',
   tooltip: 'Changed locally and on the server since the last sync. Synchronize to choose which copy to keep.',
@@ -63,6 +69,10 @@ export function differs(now: Observation, then: Observation, toleranceMs: number
 
 /** The mark of a file or folder, or `undefined` when it has none. */
 export function markFor(input: MarkInput): Mark | undefined {
+  // Synchronization never lists the file, so it never waits to be put or got.
+  if (input.dwsync === true) {
+    return DWSYNC_MARK;
+  }
   if (input.cloaked) {
     return CLOAKED_MARK;
   }

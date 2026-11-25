@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { siteSchema, type Site, type SyncRecord } from '@isocialpractice/cmd-sync-servers';
-import { CLOAKED_MARK, CONFLICT_MARK, differs, holdBack, localEntry, markFor, type MarkInput } from '../../src/marks.ts';
+import { CLOAKED_MARK, CONFLICT_MARK, differs, DWSYNC_MARK, holdBack, localEntry, markFor, type MarkInput } from '../../src/marks.ts';
 import { sampleSite } from '../helpers/sites.ts';
 
 const record: SyncRecord = { local: { size: 10, mtimeMs: 1_000_000 }, remote: { size: 12, mtimeMs: 2_000_000 }, syncedAt: 3_000_000 };
@@ -53,6 +53,17 @@ test('cloaked items are dimmed, and files that need a decision warn, before anyt
   }
 });
 
+test("Dreamweaver's records never carry the mark of a file waiting to move, on either side", () => {
+  for (const side of ['local', 'remote'] as const) {
+    assert.equal(markFor({ ...base, side, dwsync: true, record: undefined }), DWSYNC_MARK);
+    assert.equal(markFor({ ...base, side, dwsync: true, observed: { size: 99, mtimeMs: 9_000_000 } }), DWSYNC_MARK);
+    assert.equal(markFor({ ...base, side, dwsync: true, cloaked: true, conflict: true }), DWSYNC_MARK);
+  }
+  assert.equal(DWSYNC_MARK.tone, 'dim');
+  assert.equal(DWSYNC_MARK.badge, CLOAKED_MARK.badge);
+  assert.equal(DWSYNC_MARK.tooltip, "Dreamweaver's synchronization records: never synchronized.");
+});
+
 test('times are compared only when both sides have one', () => {
   assert.equal(differs({ size: 1, mtimeMs: undefined }, { size: 1, mtimeMs: 5 }, 0), false);
   assert.equal(differs({ size: 1, mtimeMs: 10 }, { size: 1, mtimeMs: 5 }, 0), true);
@@ -67,6 +78,19 @@ test('cloaked and sensitive files are held back from upload on save, with the re
   assert.equal(holdBack(site, 'art/cover.psd'), 'it is cloaked');
   assert.equal(holdBack(site, 'drafts/next.html'), 'it is cloaked');
   assert.equal(holdBack(site, '.env'), 'it matches the sensitive pattern ".env"');
+});
+
+test("Dreamweaver's records are held back from upload on save in every folder and case, cloaked or not", () => {
+  const site = sampleSite(path.join(tmpdir(), 'my-site'), path.join(tmpdir(), 'my-site-backup'));
+  const reason = "it holds Dreamweaver's synchronization records";
+  for (const target of ['_notes/dwsync.xml', 'css/_notes/dwsync.xml', '_NOTES/DWSync.xml']) {
+    assert.equal(holdBack(site, target), reason, target);
+  }
+  const cloaked = siteSchema.parse({ ...site, cloaking: { patterns: ['_notes/'] } });
+  assert.equal(holdBack(cloaked, '_notes/dwsync.xml'), reason, 'the reason comes before cloaking');
+  assert.equal(holdBack(cloaked, '_notes/index.html.mno'), 'it is cloaked');
+  assert.equal(holdBack(site, '_notes/index.html.mno'), undefined, 'Design Notes follow cloaking');
+  assert.equal(holdBack(site, 'dwsync.xml'), undefined);
 });
 
 test('a global cloaking pattern holds a file back from upload on save, unless the site re-includes it or turns them off', () => {

@@ -74,7 +74,8 @@ export function pinProblem(server: ServerData, before: Server | undefined, grant
  * Checks a site the form sent: it must be the site that was opened, keep
  * every pinned host key and trusted certificate, drop it, or hold one
  * `granted` on connection, and pass the engine's own validation. Its name
- * must be new among the other sites and its local folder must exist.
+ * must be new among the other sites, its local folder must exist, and
+ * Dreamweaver sync files need Maintain sync information.
  */
 export function checkSave(
   data: SiteData,
@@ -103,6 +104,10 @@ export function checkSave(
   const clash = others.find((site) => site.id !== current.id && sameName(site.name, data.name.trim()));
   if (clash !== undefined) {
     problems.push({ path: 'name', message: `A site named "${clash.name}" already exists.` });
+  }
+  // Dreamweaver's records are a second copy of the sync records, so they need the records kept.
+  if (data.sync.dreamweaver.enabled && !data.sync.maintainInfo) {
+    problems.push({ path: 'sync.dreamweaver.enabled', message: 'Dreamweaver sync files need Maintain sync information.' });
   }
   if (data.localRoot.trim() !== '' && !problems.some((problem) => problem.path === 'localRoot') && !folderExists(data.localRoot)) {
     problems.push({ path: 'localRoot', message: 'This folder does not exist.' });
