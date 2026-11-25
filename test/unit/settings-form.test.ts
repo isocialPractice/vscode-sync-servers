@@ -5,8 +5,9 @@ import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, test } from 'node:test';
-import { DEFAULT_GUARD_PATTERNS, dreamweaverServerName, serverSchema, type Site } from '@isocialpractice/cmd-sync-servers';
+import { DEFAULT_GUARD_PATTERNS, dreamweaverServerName, type Site } from '@isocialpractice/cmd-sync-servers';
 import type { ToWebview } from '../../src/shared/messages.ts';
+import type { ProtocolValue } from '../../src/shared/site-data.ts';
 import { applyProtocol, builtDreamweaverName, SITE_FIELDS, tidyTls, type Category } from '../../src/webview/fields.ts';
 import { isDirty, isSavedAsShown, loaded, receive, update, type Action, type State } from '../../src/webview/state.ts';
 import { view } from '../../src/webview/view.ts';
@@ -440,15 +441,17 @@ describe('Dreamweaver sync files in the form', () => {
   });
 
   test('the built name is the one the engine builds', () => {
-    const servers = [
-      { name: 'Production', protocol: 'ftps', host: 'server1.hosting.example.net', username: 'demo-user@example.com', remoteRoot: '/public_html' },
-      { name: 'Production', protocol: 'ftps', host: 'server1.hosting.example.net', remoteRoot: '/public_html/' },
-      { name: 'Production', protocol: 'ftp', host: '203.0.113.10', remoteRoot: '/', options: { allowInsecure: true } },
-      { name: 'Staging', protocol: 'local', remoteRoot: 'D:\\Sites\\my-site-testing' },
-      { name: 'Staging', protocol: 'local', remoteRoot: 'D:\\Sites\\my-site-testing\\' },
-      { name: 'Backup', protocol: 'local', remoteRoot: '/home/<user>/backups/my-site' },
-      { name: 'Production', protocol: 'sftp', host: 'sftp.example.com', username: 'demo-user', remoteRoot: '/var/www/my-site' },
-    ].map((server) => serverSchema.parse({ id: randomUUID(), ...server }));
+    // Both build the name from these fields alone. The servers are not run through the schema,
+    // which checks a local folder by the rules of the system the test runs on.
+    const servers: { protocol: ProtocolValue; host?: string; remoteRoot: string; options: { dreamweaverServer?: string } }[] = [
+      { protocol: 'ftps', host: 'server1.hosting.example.net', remoteRoot: '/public_html', options: {} },
+      { protocol: 'ftps', host: 'server1.hosting.example.net', remoteRoot: '/public_html/', options: {} },
+      { protocol: 'ftp', host: '203.0.113.10', remoteRoot: '/', options: {} },
+      { protocol: 'local', remoteRoot: 'D:\\Sites\\my-site-testing', options: {} },
+      { protocol: 'local', remoteRoot: 'D:\\Sites\\my-site-testing\\', options: {} },
+      { protocol: 'local', remoteRoot: '/home/<user>/backups/my-site', options: {} },
+      { protocol: 'sftp', host: 'sftp.example.com', remoteRoot: '/var/www/my-site', options: {} },
+    ];
     for (const server of servers) {
       assert.equal(builtDreamweaverName(server), dreamweaverServerName(server), `${server.protocol} ${server.remoteRoot}`);
     }
