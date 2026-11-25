@@ -4,16 +4,19 @@
 // temporary SYNC_SERVERS_HOME.
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { openSecret, type SecretRef } from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
 import { OPEN_SETTINGS, RESET } from '../../src/commands/servers.ts';
 import { REMOVE_SITE } from '../../src/commands/sites.ts';
+import { DREAMWEAVER_PLACEHOLDER, NONE_OF_THESE } from '../../src/flows/add-site.ts';
+import type { ChoiceQuestion, ModalQuestion } from '../../src/ui/prompt.ts';
 import type { TestApi } from '../../src/extension.ts';
 import type { SitesNode } from '../../src/views/sites-view.ts';
 import { listedSites, secretGone as gone, syncServers, testApi, waitFor } from '../helpers/extension.ts';
+import { folderEntry, writeDwsync } from '../helpers/dwsync.ts';
 import { ScriptedPrompter } from '../helpers/prompter.ts';
 
 suite('Sites', () => {
@@ -178,7 +181,55 @@ suite('Sites', () => {
     assert.equal(prompter.messages.length, before, 'cancelled: nothing happened');
     prompter.answer(RESET);
     await vscode.commands.executeCommand('syncServers.resetSyncInformation', siteNode('My Site'));
+    assert.deepEqual((prompter.asked.at(-1)?.question as ModalQuestion).buttons, [RESET], 'a site that leaves Dreamweaver alone has one button');
     assert.match(lastMessage(), /^Forgot the sync records of "My Site: my-site-backup"\./);
+  });
+
+  test("Add Site in a folder Dreamweaver synchronized asks to use its records, and takes them over", async () => {
+    const local = folder('dreamweaver-site');
+    const testing = folder('dreamweaver-site-testing');
+    const base = Date.UTC(2026, 0, 1);
+    const files = ['index.html', 'about.html', 'contact.html'];
+    for (const file of files) {
+      writeFileSync(path.join(local, file), `<p>${file}</p>`);
+      utimesSync(path.join(local, file), base / 1000, base / 1000);
+      // Dreamweaver leaves the server copy with the time of the upload, later than the local file.
+      writeFileSync(path.join(testing, file), `<p>${file}</p>`);
+      utimesSync(path.join(testing, file), base / 1000 + 7200, base / 1000 + 7200);
+    }
+    // Dreamweaver knew the folder by another spelling than the one built from it.
+    const named = 'D:/Sites/my-site-testing/';
+    writeDwsync(
+      local,
+      files.map((file) => folderEntry(path.join(local, file), path.join(testing, file), named)),
+    );
+
+    prompter.answer('Dreamweaver Site', local, 'local', testing, true, named);
+    await vscode.commands.executeCommand('syncServers.addSite');
+    assert.equal(prompter.remaining, 0);
+    const [use, which] = prompter.asked.slice(-2).map((entry) => entry.question as ChoiceQuestion<unknown>);
+    assert.equal(use?.placeholder, DREAMWEAVER_PLACEHOLDER);
+    assert.equal(which?.placeholder, 'Which of the servers Dreamweaver synchronized this folder with is dreamweaver-site-testing?');
+    assert.deepEqual(
+      which.choices.map((choice) => [choice.label, choice.description]),
+      [
+        [named, '3 files'],
+        [NONE_OF_THESE, undefined],
+      ],
+    );
+    assert.equal(lastMessage(), `Added "Dreamweaver Site" with the server dreamweaver-site-testing. Took 3 files as in sync from Dreamweaver's records.`);
+    const site = api.model.sites.find((candidate) => candidate.name === 'Dreamweaver Site');
+    assert.equal(site?.sync.dreamweaver.enabled, true);
+    assert.equal(site.servers[0]?.options.dreamweaverServer, named);
+
+    const shown = prompter.messages.length;
+    prompter.answer('both', false);
+    await vscode.commands.executeCommand('syncServers.synchronize', siteNode('Dreamweaver Site'));
+    assert.equal(api.preview.pending, undefined, 'the first preview has no rows');
+    assert.equal(prompter.messages.length, shown + 1);
+    assert.match(lastMessage(), /^"Dreamweaver Site" and dreamweaver-site-testing are in sync\. \d+ files? compared\.$/);
+    await api.model.registry().remove(site.id);
+    api.model.refresh();
   });
 
   test('Remove Site asks first, forgets the saved passwords, and the command line no longer lists the site', async () => {

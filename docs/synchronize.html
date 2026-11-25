@@ -39,7 +39,7 @@
   <li><strong>Which way</strong>: Put newer files to remote, Get newer files from remote, or Get and put newer files.</li>
   <li><strong>Files only on the other side</strong>: keep them, or delete them, worded for the direction, such as <em>Delete remote files not on local drive</em>.</li>
 </ol>
-<p>The extension then compares both sides, with progress and a Cancel button. Unchanged files are counted, never listed; if nothing differs, a message says the site is in sync.</p>
+<p>The extension then compares both sides, with progress and a Cancel button. Unchanged files are counted, never listed; if nothing differs, a message says the site is in sync, and what the comparison found in sync is saved, so the next one does not work it out again.</p>
 
 <h2 id="preview">The Sync Preview</h2>
 <p>The preview groups the files by what will happen to each, with a count on every group, decisions first:</p>
@@ -78,6 +78,17 @@
   <li>Progress shows in a notification and in the status bar, such as <code>My Site: 12 of 37 files</code>, and Cancel stops between files.</li>
 </ul>
 <p>A notification reports the result, such as <code>Synchronized 36 files. 1 failed. 169 skipped.</code> A clean run closes the preview; a run with failures keeps them in the view with their reasons, and the status bar warns until you close it.</p>
+
+<h2 id="dreamweaver">Dreamweaver's synchronization records</h2>
+<p>A site with <a href="site-settings.html#dreamweaver">Dreamweaver sync files</a> on reads and updates the records Dreamweaver keeps in each folder as <code>_notes/dwsync.xml</code>, so a site synchronized with Dreamweaver is in sync from its first preview, and both programs go on agreeing:</p>
+<ul>
+  <li>A file both sides have is in sync when both copies are as its entry says. With no record of the extension's own, one copy as the entry says means the other side changed, so a file Dreamweaver put between two synchronizations is not a conflict.</li>
+  <li>A file that is missing on one side is never judged by an entry, so its delete stays unchecked. An entry never lifts cloaking or the sensitive-file guard either.</li>
+  <li>Each transfer writes the entry Dreamweaver would have written, and a delete removes it. The entries of other servers, and anything in an entry the extension does not know, stay as they were.</li>
+  <li>The records are used only once the way Dreamweaver reads the server's clock is known. The first synchronization of the whole site learns it, from at least three files whose local copy is the one Dreamweaver recorded. Until then the in-sync message says the records are not used yet, and why.</li>
+  <li>A comparison with nothing to run still saves what it found in sync, and the in-sync message says how many files the records showed in sync, such as <code>Dreamweaver's records: 204 files in sync.</code> Later comparisons work from the extension's own records.</li>
+</ul>
+<p>The extension's own records stay the ones it trusts, so removing a <code>_notes</code> folder loses nothing here, and turning the setting off deletes nothing. <code>_notes/dwsync.xml</code> itself is <a href="files-and-cloaking.html#dreamweaver-records">never synchronized</a>. <strong>Reset Sync Information</strong> can remove the server's entries too: see <a href="commands-and-settings.html#commands">Commands</a>.</p>
 
 <h2 id="compare">Compare with Remote</h2>
 <p><strong>Compare with Remote</strong> fetches the server's copy into a read-only editor beside the local file, in VS Code's diff editor. For a binary or very large file it shows both copies' sizes, times and SHA-256 hashes, and says whether they match. The server's copy is held in memory only while its editor is open.</p>

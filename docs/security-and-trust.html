@@ -52,6 +52,9 @@
 </ul>
 <p>The engine's <a href="https://isocialpractice.github.io/cmd-sync-servers/security.html">security page</a> has the full list of threats and the test behind each defence.</p>
 
+<h2 id="dreamweaver">Dreamweaver's records</h2>
+<p><code>_notes/dwsync.xml</code> names a site's server, its folder there and the site's files, so no synchronization transfers it, in either direction, with or without a cloaking pattern, and it never reaches a web server through this extension. A site with Dreamweaver sync files on reads it as input that could come from anywhere: an entry can mark a file both sides have as in sync or as changed on one side, and nothing else. It never checks a delete, never lifts cloaking or the sensitive-file guard, and never names a file to open. A file that is not understood in full, or is over 8 MB, is neither used nor rewritten, and records behind a link the site does not follow, or one that leads out of the site, are left alone. The server names it holds are shown as plain text, never as markup or icons.</p>
+
 <h2 id="trust">Workspace trust</h2>
 <p>Sites come from your own list of sites, which a cloned repository cannot change: <code>syncServers.configDir</code> can be set in your user settings only. In a workspace in Restricted Mode:</p>
 <ul>

@@ -73,6 +73,21 @@
   <dt id="every-file">Every file shows as changed after a server change</dt>
   <dd>Some servers cannot set file times, or round them. Each side is compared with its own record, so this usually settles after one sync. If not, raise the Time tolerance in the Synchronization category, or compare by checksum.</dd>
 
+  <dt id="dreamweaver-every-file">Every file is listed although Dreamweaver had the site in sync</dt>
+  <dd>The extension reads Dreamweaver's records only for a site with <a href="site-settings.html#dreamweaver">Dreamweaver sync files</a> on, which needs Maintain sync information. With it on, check that the server's <a href="site-settings.html#advanced">Dreamweaver server name</a> is the name Dreamweaver used: the host and the folder as they were typed in Dreamweaver's site definition, such as <code>203.0.113.10//public_html/</code>. The names are in the <code>server</code> attribute of the entries in <code>_notes/dwsync.xml</code>.</dd>
+
+  <dt id="dreamweaver-not-used">"Dreamweaver's records are not used yet"</dt>
+  <dd>The extension has not yet learned how Dreamweaver reads this server's clock. A comparison of chosen files only cannot learn it: synchronize the whole site. If the message stays, fewer than three files match their entries, usually because the records are old; one synchronization of the whole site then brings both sides in step, and writes fresh entries from then on.</dd>
+
+  <dt id="dreamweaver-lists">Dreamweaver lists files the extension transferred</dt>
+  <dd>Entries are written only while Dreamweaver sync files is on, under the server's Dreamweaver server name. Check that the name is the one Dreamweaver uses. For a server Dreamweaver never synchronized the folder with, there is nothing to learn its clock from, so the entries are written on the extension's own reading of it, and Dreamweaver may list those files as changed once.</dd>
+
+  <dt id="dreamweaver-damaged">A damaged <code>dwsync.xml</code></dt>
+  <dd>A <code>dwsync.xml</code> that is not understood in full, or is over 8 MB, is neither read nor rewritten, and the log names it once per run; the other folders work as before. Deleting the file is Adobe's own fix: Dreamweaver and the extension write new entries as files are transferred, and the extension's own records are not affected.</dd>
+
+  <dt id="newer-version">"Version 2 was written by a newer sync-servers"</dt>
+  <dd>An older build read a <code>sites.json</code> that a newer one wrote: this extension from <code>1.0.0-alpha.2.0.0</code> and the <code>sync-servers</code> command line from <code>2.0.0</code> write version 2. Update both, since they share the list. The file as it was before its first conversion is kept beside it as <code>sites.json.bak</code>.</dd>
+
   <dt id="mass-delete">"is more than" the delete limit</dt>
   <dd>The run would delete more files than the site allows without a check. Type the count when asked, or raise the delete limit in Site Settings if large deletes are normal for the site.</dd>
 

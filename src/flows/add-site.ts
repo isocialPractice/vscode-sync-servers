@@ -1,5 +1,14 @@
 import path from 'node:path';
-import { parseServerAddress, type NewServer, type NewSite, type Protocol, type ServerAddress } from '@isocialpractice/cmd-sync-servers';
+import {
+  dreamweaverServerName,
+  parseServerAddress,
+  type DreamweaverServerCount,
+  type NewServer,
+  type NewSite,
+  type Protocol,
+  type ServerAddress,
+} from '@isocialpractice/cmd-sync-servers';
+import { escapeIcons } from '../status-text.ts';
 import { BACK, type Back, type Choice, type ModalQuestion, type Prompter } from '../ui/prompt.ts';
 import { pickRemoteRoot, resolveFolder, type FolderSource } from './remote-root.ts';
 
@@ -32,6 +41,12 @@ export interface AddSiteContext {
   readonly startFolder?: string | undefined;
   /** Connects with the server as answered so far; `password` answers the password question. */
   readonly connect: (request: ConnectRequest) => Promise<ConnectResult>;
+  /**
+   * The servers Dreamweaver synchronized a local folder with, from its
+   * `_notes/dwsync.xml` files, most used first. Without it, or with none
+   * found, nothing is asked about them.
+   */
+  readonly dreamweaverServers?: (localRoot: string) => Promise<readonly DreamweaverServerCount[]>;
 }
 
 /** The answers of Add Site. */
@@ -55,6 +70,18 @@ export const PROTOCOL_CHOICES: readonly Choice<ProtocolAnswer>[] = [
   { label: 'Local or network folder', description: 'A folder, a mounted drive or a network share', value: 'local' },
   { label: 'No server yet', description: 'Add one later in Site Settings', value: 'none' },
 ];
+
+/** The answers to the question asked in a folder that holds Dreamweaver's records. */
+export const USE_DREAMWEAVER: Choice<boolean> = {
+  label: "Use Dreamweaver's Sync Records",
+  description: 'The files Dreamweaver last synchronized are in sync from the first preview',
+  value: true,
+};
+export const SKIP_DREAMWEAVER: Choice<boolean> = { label: 'Do Not Use Them', value: false };
+/** The placeholder of that question. */
+export const DREAMWEAVER_PLACEHOLDER = 'This folder holds Dreamweaver synchronization records (_notes/dwsync.xml)';
+/** The last answer when Dreamweaver's names are listed: the server is none of them. */
+export const NONE_OF_THESE = 'None of These';
 
 /** The button that accepts plain FTP. */
 export const USE_FTP = 'Use FTP Anyway';
@@ -114,6 +141,95 @@ export function foldersOverlap(a: string, b: string): boolean {
     return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
   };
   return inside(a, b) || inside(b, a);
+}
+
+/** True when two names Dreamweaver gives servers mean the same server: case and a final `/` do not count, as the engine compares them. */
+export function sameDreamweaverName(a: string, b: string): boolean {
+  const fold = (name: string): string => name.replace(/\/+$/, '').toLowerCase();
+  return fold(a) === fold(b);
+}
+
+/** A name read from a `dwsync.xml`, as plain text for a quick pick: no control or bidi character, and no icon. */
+export function shownDreamweaverName(name: string): string {
+  return escapeIcons(name.replace(/[\p{Cc}\u200e\u200f\u202a-\u202e\u2066-\u2069]/gu, '?'));
+}
+
+function filesText(count: number): string {
+  return `${String(count)} ${count === 1 ? 'file' : 'files'}`;
+}
+
+/** What Add Site decided about Dreamweaver's records. */
+export interface DreamweaverAnswer {
+  readonly enabled: boolean;
+  /** The name Dreamweaver gives the server, when it is not the one built from its host and root. */
+  readonly server?: string;
+}
+
+/**
+ * Asks whether a new site uses Dreamweaver's records, when its folder holds
+ * some, and which of the servers Dreamweaver named is this one, when none
+ * is the name built from its host and root. `after` is the step before, so
+ * the questions carry on its count and Back can return to it.
+ */
+async function askDreamweaver(
+  prompter: Prompter,
+  context: AddSiteContext,
+  localRoot: string,
+  server: Pick<NewServer, 'name' | 'protocol' | 'host' | 'remoteRoot'> | undefined,
+  after: number,
+): Promise<DreamweaverAnswer | Back | undefined> {
+  const names = (await context.dreamweaverServers?.(localRoot)) ?? [];
+  if (names.length === 0) {
+    return { enabled: false };
+  }
+  const built = server === undefined ? undefined : dreamweaverServerName({ ...server, options: {} });
+  const unmatched = built !== undefined && !names.some((found) => sameDreamweaverName(found.server, built));
+  const totalSteps = after + (unmatched ? 2 : 1);
+  for (;;) {
+    const use = await prompter.choose({
+      title: 'Add Site',
+      step: after + 1,
+      totalSteps,
+      placeholder: DREAMWEAVER_PLACEHOLDER,
+      choices: [USE_DREAMWEAVER, SKIP_DREAMWEAVER],
+      selected: true,
+    });
+    if (use === undefined || use === BACK) {
+      return use;
+    }
+    if (!use) {
+      return { enabled: false };
+    }
+    if (!unmatched || server === undefined) {
+      return { enabled: true };
+    }
+    const chosen = await prompter.choose<string | null>({
+      title: 'Add Site',
+      step: after + 2,
+      totalSteps,
+      placeholder: `Which of the servers Dreamweaver synchronized this folder with is ${server.name}?`,
+      choices: [
+        ...names.map((found) => ({ label: shownDreamweaverName(found.server), description: filesText(found.files), value: found.server })),
+        { label: NONE_OF_THESE, value: null },
+      ],
+    });
+    if (chosen === undefined) {
+      return undefined;
+    }
+    if (chosen !== BACK) {
+      return chosen === null ? { enabled: true } : { enabled: true, server: chosen };
+    }
+  }
+}
+
+/** The site with Dreamweaver's records in use, and the server's name in them, when the answer says so. */
+function withDreamweaver(site: NewSite, answer: DreamweaverAnswer): NewSite {
+  if (!answer.enabled) {
+    return site;
+  }
+  const named = answer.server;
+  const servers = site.servers?.map((server) => (named === undefined ? server : { ...server, options: { ...(server.options ?? {}), dreamweaverServer: named } }));
+  return { ...site, ...(servers === undefined ? {} : { servers }), sync: { dreamweaver: { enabled: true } } };
 }
 
 interface Draft {
@@ -272,32 +388,46 @@ export async function askNewSite(prompter: Prompter, context: AddSiteContext): P
   ];
 
   let index = 0;
-  let finishedEarly = false;
-  while (index < steps.length) {
-    const step = steps[index];
-    const result = step === undefined ? undefined : await step();
-    if (result === undefined) {
+  for (;;) {
+    let finishedEarly = false;
+    while (index < steps.length) {
+      const step = steps[index];
+      const result = step === undefined ? undefined : await step();
+      if (result === undefined) {
+        return undefined;
+      }
+      if (result === BACK) {
+        index = Math.max(0, index - 1);
+      } else if (result === 'done') {
+        finishedEarly = true;
+        break;
+      } else if (result === 'next') {
+        index += 1;
+      }
+    }
+    const name = draft.name.trim();
+    const localRoot = draft.localRoot ?? '';
+    let site: NewSite;
+    let tested: boolean;
+    if (draft.protocol === undefined || draft.protocol === 'none') {
+      site = { name, localRoot };
+      tested = false;
+    } else if (draft.protocol === 'local' || (finishedEarly && draft.folder !== undefined)) {
+      const folder = draft.folder ?? '';
+      site = { name, localRoot, servers: [{ name: path.basename(folder) || 'Local folder', protocol: 'local', remoteRoot: folder }] };
+      tested = true;
+    } else {
+      return connectAndPick(prompter, context, draft, { name, localRoot }, { askHost, askUser, askPassword });
+    }
+    // Back from Dreamweaver's question asks the step that finished the answers again: Protocol, or the folder.
+    const dreamweaver = await askDreamweaver(prompter, context, localRoot, site.servers?.[0], totalSteps(draft.protocol));
+    if (dreamweaver === undefined) {
       return undefined;
     }
-    if (result === BACK) {
-      index = Math.max(0, index - 1);
-    } else if (result === 'done') {
-      finishedEarly = true;
-      break;
-    } else if (result === 'next') {
-      index += 1;
+    if (dreamweaver !== BACK) {
+      return { site: withDreamweaver(site, dreamweaver), tested };
     }
   }
-  const name = draft.name.trim();
-  const localRoot = draft.localRoot ?? '';
-  if (draft.protocol === undefined || draft.protocol === 'none') {
-    return { site: { name, localRoot }, tested: false };
-  }
-  if (draft.protocol === 'local' || (finishedEarly && draft.folder !== undefined)) {
-    const folder = draft.folder ?? '';
-    return { site: { name, localRoot, servers: [{ name: path.basename(folder) || 'Local folder', protocol: 'local', remoteRoot: folder }] }, tested: true };
-  }
-  return connectAndPick(prompter, context, draft, { name, localRoot }, { askHost, askUser, askPassword });
 }
 
 /** Connects with the answers, offers fixes when that fails, then picks the root and asks about deletes at the top. */
@@ -368,48 +498,60 @@ async function connectAndPick(
 
   const parsed = parseServerAddress(draft.host);
   const address: ServerAddress = parsed.ok ? parsed.address : { host: draft.host };
-  let server: NewServer;
-  let root: string | undefined;
-  if (connection === undefined) {
-    server = draftServer(draft, address);
-    const typed = await prompter.text({
-      title: 'Add Site: the root directory',
-      prompt: 'The folder on the server the site is published to, as the account sees it. The connection was not tested.',
-      value: address.remoteRoot ?? '/',
-      validate: remoteRootProblem,
-    });
-    if (typeof typed !== 'string') {
-      return undefined;
-    }
-    root = typed.trim();
-  } else {
-    server = connection.server;
-    try {
-      const start = connection.startingFolder ?? '/';
-      const wanted = address.remoteRoot === undefined ? undefined : resolveFolder(address.remoteRoot, start);
-      root = wanted !== undefined && (await connection.exists(wanted)) ? wanted : await pickRemoteRoot(prompter, connection, start);
-    } finally {
-      await connection.close();
-    }
-    if (root === undefined) {
-      return undefined;
-    }
-  }
-  const options: NonNullable<NewServer['options']> = { ...(server.options ?? {}) };
-  if (root === '/') {
-    const choice = await prompter.modal(ROOT_DELETES_QUESTION);
-    if (choice === ALLOW_DELETES) {
-      options.allowRootDeletes = true;
-    }
-  }
   const tested = connection !== undefined;
   const password = tested && draft.password !== '' ? draft.password : undefined;
-  const saved: NewServer = {
-    ...server,
-    name: server.host ?? address.host,
-    remoteRoot: root,
-    auth: { method: 'password', savePassword: password !== undefined },
-    ...(Object.keys(options).length === 0 ? {} : { options }),
-  };
-  return { site: { name: site.name, localRoot: site.localRoot, servers: [saved] }, ...(password === undefined ? {} : { password }), tested };
+  const server: NewServer = connection?.server ?? draftServer(draft, address);
+  let typedRoot = address.remoteRoot ?? '/';
+  let picked = false;
+  try {
+    // Back from Dreamweaver's question asks for the root directory again.
+    for (;;) {
+      let root: string | undefined;
+      if (connection === undefined) {
+        const typed = await prompter.text({
+          title: 'Add Site: the root directory',
+          prompt: 'The folder on the server the site is published to, as the account sees it. The connection was not tested.',
+          value: typedRoot,
+          validate: remoteRootProblem,
+        });
+        if (typeof typed !== 'string') {
+          return undefined;
+        }
+        root = typed.trim();
+        typedRoot = root;
+      } else {
+        const start = connection.startingFolder ?? '/';
+        const wanted = address.remoteRoot === undefined || picked ? undefined : resolveFolder(address.remoteRoot, start);
+        root = wanted !== undefined && (await connection.exists(wanted)) ? wanted : await pickRemoteRoot(prompter, connection, start);
+        picked = true;
+        if (root === undefined) {
+          return undefined;
+        }
+      }
+      const options: NonNullable<NewServer['options']> = { ...(server.options ?? {}) };
+      if (root === '/') {
+        const choice = await prompter.modal(ROOT_DELETES_QUESTION);
+        if (choice === ALLOW_DELETES) {
+          options.allowRootDeletes = true;
+        }
+      }
+      const saved: NewServer = {
+        ...server,
+        name: server.host ?? address.host,
+        remoteRoot: root,
+        auth: { method: 'password', savePassword: password !== undefined },
+        ...(Object.keys(options).length === 0 ? {} : { options }),
+      };
+      const dreamweaver = await askDreamweaver(prompter, context, site.localRoot, saved, totalSteps(draft.protocol));
+      if (dreamweaver === undefined) {
+        return undefined;
+      }
+      if (dreamweaver !== BACK) {
+        const answered = withDreamweaver({ name: site.name, localRoot: site.localRoot, servers: [saved] }, dreamweaver);
+        return { site: answered, ...(password === undefined ? {} : { password }), tested };
+      }
+    }
+  } finally {
+    await connection?.close();
+  }
 }

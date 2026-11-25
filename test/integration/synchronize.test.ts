@@ -2,16 +2,19 @@
 // folder server, each through the extension's own commands, the Sync
 // Preview and its row actions. Every scenario gets a fresh site.
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { Site } from '@isocialpractice/cmd-sync-servers';
+import { dreamweaverServerName, parseDwsync, type Site } from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
+import { RESET, RESET_WITH_DREAMWEAVER } from '../../src/commands/servers.ts';
 import { wholeSiteButton } from '../../src/commands/sync.ts';
 import { REMOTE_SCHEME } from '../../src/contributions.ts';
 import type { TestApi } from '../../src/extension.ts';
 import { deleteButton } from '../../src/preview/controller.ts';
 import type { PreviewNode } from '../../src/preview/view.ts';
+import type { ModalQuestion } from '../../src/ui/prompt.ts';
+import { filetime, folderEntry, writeDwsync } from '../helpers/dwsync.ts';
 import { testApi } from '../helpers/extension.ts';
 import { ScriptedPrompter } from '../helpers/prompter.ts';
 
@@ -27,7 +30,7 @@ suite('Synchronize', () => {
   let count = 0;
 
   /** A fresh site whose Remote server is a local folder. */
-  async function newSite(options: { patterns?: string[]; paths?: string[]; caseSensitive?: boolean } = {}): Promise<{ site: Site; local: string; remote: string }> {
+  async function newSite(options: { patterns?: string[]; paths?: string[]; caseSensitive?: boolean; dreamweaver?: boolean } = {}): Promise<{ site: Site; local: string; remote: string }> {
     count += 1;
     const local = path.join(work, `site-${String(count)}`);
     const remote = path.join(work, `server-${String(count)}`);
@@ -39,6 +42,7 @@ suite('Synchronize', () => {
       servers: [{ name: 'Backup', protocol: 'local', remoteRoot: remote }],
       cloaking: { patterns: options.patterns ?? [], paths: options.paths ?? [] },
       ...(options.caseSensitive === undefined ? {} : { local: { caseSensitive: options.caseSensitive } }),
+      ...(options.dreamweaver === true ? { sync: { dreamweaver: { enabled: true } } } : {}),
     });
     api.model.refresh();
     return { site, local, remote };
@@ -106,6 +110,60 @@ suite('Synchronize', () => {
   teardown(async () => {
     await api.preview.close();
     assert.equal(prompter.remaining, 0, 'every scripted answer was used');
+  });
+
+  test("a site that uses Dreamweaver's records is in sync from its first comparison, saves that, and keeps the records up to date", async () => {
+    const { site, local, remote } = await newSite({ dreamweaver: true });
+    const files = ['index.html', 'about.html', 'css/site.css'];
+    for (const file of files) {
+      // Dreamweaver leaves the server copy with the time of the upload, later than the local file.
+      write(local, file, `<p>${file}</p>`);
+      write(remote, file, `<p>${file}</p>`, LATER + 7_200_000);
+    }
+    const server = site.servers[0];
+    assert.ok(server);
+    const name = dreamweaverServerName(server);
+    const at = (root: string, file: string): string => path.join(root, ...file.split('/'));
+    const entry = (file: string): ReturnType<typeof folderEntry> => folderEntry(at(local, file), at(remote, file), name);
+    const records = writeDwsync(local, [entry('index.html'), entry('about.html')]);
+    writeDwsync(path.join(local, 'css'), [entry('css/site.css')]);
+
+    await preview(site, 'both');
+    assert.equal(api.preview.pending, undefined, 'nothing to run, so no preview');
+    assert.match(lastMessage(), /^"Scenario \d+" and Backup are in sync\. \d+ files? compared\. Dreamweaver's records: 3 files in sync\.$/);
+
+    // The tool's own records now hold what the first comparison took from Dreamweaver's.
+    await preview(site, 'both');
+    assert.equal(api.preview.pending, undefined);
+    assert.match(lastMessage(), /^"Scenario \d+" and Backup are in sync\. \d+ files? compared\.$/);
+
+    write(local, 'about.html', '<p>About Acme Corp</p>', LATER + 10_800_000);
+    await vscode.commands.executeCommand('syncServers.put', vscode.Uri.file(at(local, 'about.html')));
+    assert.equal(read(remote, 'about.html'), '<p>About Acme Corp</p>');
+    const written = parseDwsync(readFileSync(records, 'utf8'))?.entries.filter((found) => found.server === name);
+    assert.equal(written?.find((found) => found.name === 'about.html')?.local, filetime(statSync(at(local, 'about.html'), { bigint: true }).mtimeNs), 'the Put wrote the entry');
+    assert.equal(written.find((found) => found.name === 'index.html')?.local, entry('index.html').local, 'the other entry is as it was');
+
+    const current = api.model.site(site.id);
+    assert.ok(current);
+    const target = { kind: 'server', site: current, server };
+    prompter.answer(RESET);
+    await vscode.commands.executeCommand('syncServers.resetSyncInformation', target);
+    const asked = prompter.asked.at(-1)?.question as ModalQuestion;
+    assert.deepEqual(asked.buttons, [RESET, RESET_WITH_DREAMWEAVER]);
+    assert.match(asked.detail ?? '', /Dreamweaver's own records stay, so the next synchronization of the whole site takes them over again\.$/);
+    assert.ok(parseDwsync(readFileSync(records, 'utf8'))?.entries.some((found) => found.server === name), 'Reset keeps the entries');
+
+    prompter.answer(RESET_WITH_DREAMWEAVER);
+    await vscode.commands.executeCommand('syncServers.resetSyncInformation', target);
+    assert.match(lastMessage(), /removed its entries from Dreamweaver's records\./);
+    for (const file of [records, path.join(local, 'css', '_notes', 'dwsync.xml')]) {
+      const left = existsSync(file) ? (parseDwsync(readFileSync(file, 'utf8'))?.entries ?? []) : [];
+      assert.ok(!left.some((found) => found.server === name), `no entry of the server is left in ${path.relative(local, file)}`);
+    }
+
+    assert.equal(existsSync(path.join(remote, '_notes')), false, "Dreamweaver's records never reach the server");
+    assert.equal(existsSync(path.join(remote, 'css', '_notes')), false);
   });
 
   test('first sync in each direction', async () => {

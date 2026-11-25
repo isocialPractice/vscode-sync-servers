@@ -23,6 +23,10 @@ Until the first stable release, versions use the pre-release form
 - The Explorer and the Remote Files view mark `_notes/dwsync.xml` with a
   dimmed `⊘` and the tooltip `Dreamweaver's synchronization records: never
   synchronized.`, never as a file waiting to be put or got.
+- Synchronize saves what a comparison found in sync when it has nothing to
+  run, so the next comparison does not work it out again. For a site that
+  uses Dreamweaver's records, the in-sync message says how many files the
+  records showed in sync, or why they are not used yet.
 
 ### Added
 
@@ -36,6 +40,19 @@ Until the first stable release, versions use the pre-release form
   gives the server in its records, for a server it knew by another address
   or folder spelling. Empty uses the name built from the host and the root
   directory, which the field shows as its placeholder.
+- Add Site in a folder that holds Dreamweaver's records asks Use
+  Dreamweaver's Sync Records or Do Not Use Them, then, when the server's
+  host and root directory match none of the names in the records, which of
+  them the server is. With the connection tested, it takes the records over
+  under a progress notification, with the password the server accepted,
+  and the closing message says how many files it took as in sync.
+- Reset Sync Information, for a site that uses Dreamweaver's records, says
+  that they stay and the next synchronization of the whole site takes them
+  over again, and offers Reset, and Dreamweaver's Entries Too, which also
+  removes the server's entries from them.
+- Dreamweaver's records in the documentation: getting started,
+  Synchronize, Site Settings, files and cloaking, commands, security and
+  troubleshooting.
 
 ## [1.0.0-alpha.1.2.1] - 2026-11-12
 

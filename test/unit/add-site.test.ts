@@ -2,12 +2,17 @@ import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, test } from 'node:test';
+import type { DreamweaverServerCount } from '@isocialpractice/cmd-sync-servers';
 import {
   ALLOW_DELETES,
   askNewSite,
+  DREAMWEAVER_PLACEHOLDER,
   foldersOverlap,
   hostProblem,
+  NONE_OF_THESE,
   remoteRootProblem,
+  sameDreamweaverName,
+  shownDreamweaverName,
   siteNameProblem,
   USE_FTP,
   type AddSiteContext,
@@ -393,5 +398,149 @@ describe('the remote root picker', () => {
     const prompter = new ScriptedPrompter([USE]);
     assert.equal(await pickRemoteRoot(prompter, source, '/srv'), '/');
     assert.match(prompter.messages[0] ?? '', /\/srv cannot be opened/);
+  });
+});
+
+describe('Add Site in a folder Dreamweaver synchronized', () => {
+  /** A context whose folder holds Dreamweaver's records for these servers. */
+  function withRecords(server: FakeServer, names: readonly DreamweaverServerCount[]): { context: AddSiteContext; looked: string[] } {
+    const looked: string[] = [];
+    return {
+      looked,
+      context: {
+        ...server.context(),
+        dreamweaverServers: (localRoot) => {
+          looked.push(localRoot);
+          return Promise.resolve(names);
+        },
+      },
+    };
+  }
+  const choices = (prompter: ScriptedPrompter): ChoiceQuestion<unknown>[] =>
+    prompter.asked.filter((entry) => entry.kind === 'choose').map((entry) => entry.question as ChoiceQuestion<unknown>);
+  const sftpAnswers = ['My Site', siteFolder, 'sftp', 'sftp.example.com', 'demo-user', 'example-password', open('my-site'), USE];
+
+  test('a folder without records asks nothing, and the site leaves them alone', async () => {
+    const { context, looked } = withRecords(new FakeServer(), []);
+    const prompter = new ScriptedPrompter(sftpAnswers);
+    const answers = await askNewSite(prompter, context);
+    assert.equal(prompter.remaining, 0);
+    assert.deepEqual(looked, [siteFolder]);
+    assert.equal(answers?.site.sync, undefined);
+    assert.ok(!choices(prompter).some((question) => question.placeholder === DREAMWEAVER_PLACEHOLDER));
+  });
+
+  test('records that name the server by its host and root: one question, and the site uses them', async () => {
+    const server = new FakeServer();
+    const { context } = withRecords(server, [{ server: 'SFTP.example.com//var/www/my-site', files: 212 }]);
+    const prompter = new ScriptedPrompter([...sftpAnswers, true]);
+    const answers = await askNewSite(prompter, context);
+    assert.equal(prompter.remaining, 0);
+    const asked = choices(prompter).at(-1);
+    assert.equal(asked?.title, 'Add Site');
+    assert.equal(asked.placeholder, DREAMWEAVER_PLACEHOLDER);
+    assert.deepEqual(
+      asked.choices.map((choice) => [choice.label, choice.description]),
+      [
+        ["Use Dreamweaver's Sync Records", 'The files Dreamweaver last synchronized are in sync from the first preview'],
+        ['Do Not Use Them', undefined],
+      ],
+    );
+    assert.deepEqual([asked.step, asked.totalSteps], [7, 7]);
+    assert.deepEqual(answers?.site.sync, { dreamweaver: { enabled: true } });
+    assert.equal(answers.site.servers?.[0]?.options?.dreamweaverServer, undefined);
+    assert.equal(answers.password, 'example-password');
+    assert.equal(server.closed, 1);
+  });
+
+  test('records of other names ask which one the server is, and the name chosen is kept', async () => {
+    const names = [
+      { server: '203.0.113.10//var/www/my-site/', files: 212 },
+      { server: 'D:/Sites/my-site-testing/', files: 198 },
+    ];
+    const prompter = new ScriptedPrompter([...sftpAnswers, true, '203.0.113.10//var/www/my-site/']);
+    const answers = await askNewSite(prompter, withRecords(new FakeServer(), names).context);
+    const which = choices(prompter).at(-1);
+    assert.equal(which?.placeholder, 'Which of the servers Dreamweaver synchronized this folder with is sftp.example.com?');
+    assert.deepEqual(
+      which.choices.map((choice) => [choice.label, choice.description]),
+      [
+        ['203.0.113.10//var/www/my-site/', '212 files'],
+        ['D:/Sites/my-site-testing/', '198 files'],
+        [NONE_OF_THESE, undefined],
+      ],
+    );
+    assert.deepEqual([which.step, which.totalSteps], [8, 8]);
+    assert.deepEqual(answers?.site.sync, { dreamweaver: { enabled: true } });
+    assert.equal(answers.site.servers?.[0]?.options?.dreamweaverServer, '203.0.113.10//var/www/my-site/');
+
+    const none = new ScriptedPrompter([...sftpAnswers, true, null]);
+    const unnamed = await askNewSite(none, withRecords(new FakeServer(), names).context);
+    assert.deepEqual(unnamed?.site.sync, { dreamweaver: { enabled: true } });
+    assert.equal(unnamed.site.servers?.[0]?.options, undefined, 'None of These changes nothing on the server');
+  });
+
+  test('Do Not Use Them leaves the site as it was', async () => {
+    const prompter = new ScriptedPrompter([...sftpAnswers, false]);
+    const answers = await askNewSite(prompter, withRecords(new FakeServer(), [{ server: 'D:/Sites/my-site-testing/', files: 3 }]).context);
+    assert.equal(prompter.remaining, 0);
+    assert.ok(answers);
+    assert.equal(answers.site.sync, undefined);
+    assert.equal(answers.site.servers?.[0]?.options, undefined);
+  });
+
+  test('Back goes to the step before: the root directory, the folder, or the first question', async () => {
+    const remote = new ScriptedPrompter([...sftpAnswers, BACK, open('logs'), USE, true]);
+    const moved = await askNewSite(remote, withRecords(new FakeServer(), [{ server: 'sftp.example.com//var/www/logs/', files: 3 }]).context);
+    assert.equal(remote.remaining, 0);
+    assert.equal(moved?.site.servers?.[0]?.remoteRoot, '/var/www/logs');
+    assert.deepEqual(moved.site.sync, { dreamweaver: { enabled: true } });
+
+    const otherFolder = path.join(tmpdir(), 'my-site-testing');
+    const built = `${otherFolder.split(path.sep).join('/')}/`;
+    const local = new ScriptedPrompter(['My Site', siteFolder, 'local', backupFolder, BACK, otherFolder, true]);
+    const folderAnswers = await askNewSite(local, withRecords(new FakeServer(), [{ server: built, files: 3 }]).context);
+    assert.equal(local.remaining, 0);
+    assert.equal(folderAnswers?.site.servers?.[0]?.remoteRoot, otherFolder);
+    assert.deepEqual(folderAnswers.site.sync, { dreamweaver: { enabled: true } });
+
+    const named = new ScriptedPrompter([...sftpAnswers, true, BACK, false]);
+    const skipped = await askNewSite(named, withRecords(new FakeServer(), [{ server: 'D:/Sites/my-site-testing/', files: 3 }]).context);
+    assert.equal(named.remaining, 0);
+    assert.equal(skipped?.site.sync, undefined, 'Back from the names asks the first question again');
+  });
+
+  test('a site with no server yet is asked after Protocol, and uses the records without a server name', async () => {
+    const { context } = withRecords(new FakeServer(), [{ server: 'D:/Sites/my-site-testing/', files: 3 }]);
+    const prompter = new ScriptedPrompter(['My Site', siteFolder, 'none', BACK, 'none', true]);
+    const answers = await askNewSite(prompter, context);
+    assert.equal(prompter.remaining, 0);
+    assert.deepEqual(answers, { site: { name: 'My Site', localRoot: siteFolder, sync: { dreamweaver: { enabled: true } } }, tested: false });
+    const asked = choices(prompter);
+    assert.deepEqual(
+      asked.map((question) => question.placeholder),
+      ['Protocol: how to reach the first server', DREAMWEAVER_PLACEHOLDER, 'Protocol: how to reach the first server', DREAMWEAVER_PLACEHOLDER],
+    );
+    assert.deepEqual([asked[1]?.step, asked[1]?.totalSteps], [4, 4]);
+  });
+
+  test('Save Without Testing asks too, and Escape adds nothing and closes the connection', async () => {
+    const names = [{ server: 'sftp.example.org//var/www/my-site/', files: 3 }];
+    const saved = new ScriptedPrompter(['My Site', siteFolder, 'sftp', 'sftp.example.org', 'demo-user', 'example-password', 'save', '/var/www/my-site', true]);
+    const answers = await askNewSite(saved, withRecords(new FakeServer([notFound]), names).context);
+    assert.equal(answers?.tested, false);
+    assert.deepEqual(answers.site.sync, { dreamweaver: { enabled: true } });
+
+    const server = new FakeServer();
+    const escaped = new ScriptedPrompter([...sftpAnswers, undefined]);
+    assert.equal(await askNewSite(escaped, withRecords(server, names).context), undefined);
+    assert.equal(server.closed, 1);
+  });
+
+  test('names are compared as the engine compares them, and shown as plain text', () => {
+    assert.equal(sameDreamweaverName('203.0.113.10//public_html/', '203.0.113.10//PUBLIC_HTML'), true);
+    assert.equal(sameDreamweaverName('203.0.113.10//public_html/', '203.0.113.10//public_html/old/'), false);
+    assert.equal(shownDreamweaverName('$(alert) 203.0.113.10//public_html/'), '\\$(alert) 203.0.113.10//public_html/');
+    assert.equal(shownDreamweaverName('a\u202eb\nc'), 'a?b?c');
   });
 });

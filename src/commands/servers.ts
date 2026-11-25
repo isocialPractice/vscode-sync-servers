@@ -11,6 +11,8 @@ import { SECRET_KINDS } from './sites.ts';
 
 /** The button of the Reset Sync Information confirmation. */
 export const RESET = 'Reset';
+/** Its second button, for a site that uses Dreamweaver's records: removes the server's entries from them too. */
+export const RESET_WITH_DREAMWEAVER = "Reset, and Dreamweaver's Entries Too";
 
 function describe({ site, server }: ServerTarget): string {
   return `"${site.name}: ${server.name}"`;
@@ -398,17 +400,26 @@ export async function resetSyncInformation(services: Services, arg: unknown): Pr
     return;
   }
   const name = describe(target);
+  const usesRecords = target.site.sync.dreamweaver.enabled && target.site.sync.maintainInfo;
+  const detail =
+    'The next synchronization compares both sides from scratch, and each file that differs waits for you to choose Put or Get. No file is changed.';
   const choice = await services.prompter().modal({
     message: `Forget the sync records of ${name}?`,
-    detail:
-      'The next synchronization compares both sides from scratch, and each file that differs waits for you to choose Put or Get. No file is changed.',
-    buttons: [RESET],
+    detail: usesRecords ? `${detail} Dreamweaver's own records stay, so the next synchronization of the whole site takes them over again.` : detail,
+    buttons: usesRecords ? [RESET, RESET_WITH_DREAMWEAVER] : [RESET],
     warning: true,
   });
-  if (choice !== RESET) {
+  if (choice !== RESET && !(usesRecords && choice === RESET_WITH_DREAMWEAVER)) {
     return;
   }
-  await withSession(services, target, (session) => session.resetState());
-  services.logger.info('Sync records forgotten', { siteId: target.site.id, serverId: target.server.id });
-  void services.prompter().inform(`Forgot the sync records of ${name}. The next sync compares both sides from scratch.`);
+  const dreamweaver = choice === RESET_WITH_DREAMWEAVER;
+  await withSession(services, target, (session) => session.resetState({ dreamweaver }));
+  services.logger.info('Sync records forgotten', { siteId: target.site.id, serverId: target.server.id, dreamweaver });
+  void services
+    .prompter()
+    .inform(
+      dreamweaver
+        ? `Forgot the sync records of ${name}, and removed its entries from Dreamweaver's records. The next sync compares both sides from scratch.`
+        : `Forgot the sync records of ${name}. The next sync compares both sides from scratch.`,
+    );
 }

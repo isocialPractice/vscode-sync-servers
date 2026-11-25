@@ -217,15 +217,15 @@ records.
   - **Goal**: Resolve to [Phase V1, step 5](.claude/prompts/use-dwsync-file.prompt.md#phase-v1-the-site-data-site-settings-and-the-file-marks)
 - [x] Documents, changelog, the extension's checks and the commit
   - **Goal**: Resolve to [Phase V1, step 6](.claude/prompts/use-dwsync-file.prompt.md#phase-v1-the-site-data-site-settings-and-the-file-marks)
-- [ ] Add Site: the questions in a folder with Dreamweaver's records, and
+- [x] Add Site: the questions in a folder with Dreamweaver's records, and
       the take-over
   - **Goal**: Resolve to [Phase V2, step 1](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
-- [ ] Synchronize saves what it found in sync, and Forget Sync Records can
-      remove Dreamweaver's entries too
+- [x] Synchronize saves what it found in sync, and Reset Sync Information
+      can remove Dreamweaver's entries too
   - **Goal**: Resolve to [Phase V2, step 2](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
-- [ ] Documents and changelog
+- [x] Documents and changelog
   - **Goal**: Resolve to [Phase V2, step 3](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
-- [ ] The extension's checks and the commit
+- [x] The extension's checks and the commit
   - **Goal**: Resolve to [Phase V2, step 4](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
 - [ ] The report
   - **Goal**: Resolve to [Phase V2, step 5](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)

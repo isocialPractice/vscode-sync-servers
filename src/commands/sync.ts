@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
+  DREAMWEAVER_TEXT,
+  dreamweaverInSync,
   isDwsyncPath,
   isSyncError,
   resultLine,
@@ -10,6 +12,7 @@ import {
   type ProgressEvent,
   type Server,
   type Site,
+  type SyncPlan,
 } from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
 import { askSync, type SyncChoice } from '../flows/sync-options.ts';
@@ -122,7 +125,22 @@ async function openSession(services: Services, site: Site, server: Server): Prom
   return SyncSession.open({ registry: services.model.registry(), siteId: site.id, serverId: server.id, host: services.host });
 }
 
-/** Scans both sides and shows the plan in the Sync Preview, or says the site is in sync. */
+/**
+ * What a plan of a site that uses Dreamweaver's records took from them, as a
+ * sentence after the in-sync message: the files taken as in sync, or why the
+ * records are not used yet. Empty for a site that does not use them.
+ */
+export function dreamweaverLine(plan: Pick<SyncPlan, 'adopted'>, clock: 'known' | 'unknown' | undefined, wholeSite: boolean): string {
+  if (plan.adopted > 0) {
+    return ` ${dreamweaverInSync(plan.adopted)}`;
+  }
+  if (clock === 'unknown') {
+    return ` ${wholeSite ? DREAMWEAVER_TEXT.clockUnknown : DREAMWEAVER_TEXT.clockNotLearned}`;
+  }
+  return '';
+}
+
+/** Scans both sides and shows the plan in the Sync Preview, or says the site is in sync, saving what it found. */
 export async function planAndShow(services: SyncServices, site: Site, server: Server, options: Omit<PlanOptions, 'signal' | 'onProgress'>): Promise<void> {
   const session = await openSession(services, site, server);
   let plan;
@@ -155,8 +173,15 @@ export async function planAndShow(services: SyncServices, site: Site, server: Se
     throw error;
   }
   if (plan.items.length === 0) {
-    await session.close();
-    void services.prompter().inform(`"${site.name}" and ${server.name} are in sync. ${String(plan.unlisted)} ${plan.unlisted === 1 ? 'file' : 'files'} compared.`);
+    let records: string;
+    try {
+      // With nothing to run, what the plan found in sync is still saved, so the next comparison does not work it out again.
+      await session.settle(plan);
+      records = dreamweaverLine(plan, session.dreamweaverClock, options.scope?.kind !== 'paths');
+    } finally {
+      await session.close();
+    }
+    void services.prompter().inform(`"${site.name}" and ${server.name} are in sync. ${String(plan.unlisted)} ${plan.unlisted === 1 ? 'file' : 'files'} compared.${records}`);
     return;
   }
   services.logger.info('Preview ready', { siteId: site.id, serverId: server.id, direction: plan.direction, rows: plan.items.length });

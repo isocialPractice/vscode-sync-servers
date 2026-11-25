@@ -53,7 +53,9 @@ key or an FTPS certificate that does not verify is shown for you to decide
 on, a refused sign-in asks again, and the root directory is picked from the
 folders the server shows, starting where your account opens. The password
 is saved in VS Code's secret storage only once the server accepts it, and
-Cancel at any step adds nothing.
+Cancel at any step adds nothing. In a folder Dreamweaver synchronized, Add
+Site asks whether to use Dreamweaver's sync records, and takes them over,
+so the first preview lists only real differences.
 
 ## A First Sync
 

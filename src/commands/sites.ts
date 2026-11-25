@@ -1,7 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
-import { isSyncError, sealSecret, serverSchema, type SecretKind } from '@isocialpractice/cmd-sync-servers';
+import {
+  dreamweaverTakeOver,
+  findDreamweaverServers,
+  isSyncError,
+  sealSecret,
+  serverSchema,
+  siteCloak,
+  SyncSession,
+  type SecretKind,
+  type Server,
+  type Site,
+} from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
 import { errorText } from '../error-text.ts';
 import { askNewSite, type AddSiteContext } from '../flows/add-site.ts';
@@ -58,10 +69,59 @@ function connectForNewSite(services: Services, ids: { readonly site: string; rea
   };
 }
 
+/** The servers Dreamweaver synchronized a folder with, looked for with the cloak a new site starts with: the global patterns. */
+function dreamweaverServersOf(services: Services): NonNullable<AddSiteContext['dreamweaverServers']> {
+  return async (localRoot) => {
+    const cloak = siteCloak({ cloaking: { enabled: true, patterns: [], paths: [] } }, process.platform, services.model.globalPatterns);
+    try {
+      return await findDreamweaverServers(localRoot, { cloak });
+    } catch (error) {
+      services.logger.warn("Add Site could not look for Dreamweaver's records", { problem: errorText(error) });
+      return [];
+    }
+  };
+}
+
+/**
+ * Takes Dreamweaver's records over for a site just added: plans the whole
+ * site in both directions and saves what the plan found in sync, so the
+ * first preview lists only real differences. The password the server
+ * accepted is saved by then, so nothing is asked again. Returns the
+ * sentence for the closing message.
+ */
+async function takeOverRecords(services: Services, site: Site, server: Server): Promise<string> {
+  try {
+    return await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: "Reading Dreamweaver's records", cancellable: true },
+      async (_progress, token) => {
+        const controller = new AbortController();
+        token.onCancellationRequested(() => {
+          controller.abort();
+        });
+        const session = await SyncSession.open({ registry: services.model.registry(), siteId: site.id, serverId: server.id, host: services.host });
+        try {
+          const plan = await session.plan({ direction: 'both', scope: { kind: 'site' }, signal: controller.signal });
+          await session.settle(plan);
+          services.logger.info("Dreamweaver's records taken over", { siteId: site.id, serverId: server.id, adopted: plan.adopted, clock: session.dreamweaverClock });
+          return dreamweaverTakeOver(plan.adopted, session.dreamweaverClock ?? 'unknown');
+        } finally {
+          await session.close();
+        }
+      },
+    );
+  } catch (error) {
+    services.logger.warn("Dreamweaver's records were not read after Add Site", { siteId: site.id, serverId: server.id, problem: errorText(error) });
+    const reason = isSyncError(error, 'E_CANCELLED') ? 'the reading was cancelled.' : errorText(error);
+    return `Dreamweaver's records were not read: ${reason} The first synchronization of the whole site takes them over.`;
+  }
+}
+
 /**
  * Add Site: asks for the site and its first server, connects before
  * anything is saved, picks the root directory from what the server shows,
- * then adds the site and saves the password the server accepted.
+ * then adds the site and saves the password the server accepted. In a
+ * folder Dreamweaver synchronized, it asks whether to use Dreamweaver's
+ * records, and with a yes and a tested connection takes them over.
  */
 export async function addSite(services: Services): Promise<void> {
   const registry = services.model.registry();
@@ -71,6 +131,7 @@ export async function addSite(services: Services): Promise<void> {
     existingNames: services.model.sites.map((site) => site.name),
     startFolder,
     connect: connectForNewSite(services, ids),
+    dreamweaverServers: dreamweaverServersOf(services),
   });
   if (answers === undefined) {
     return;
@@ -87,11 +148,13 @@ export async function addSite(services: Services): Promise<void> {
   } else {
     services.model.refresh();
   }
+  const usesRecords = site.sync.dreamweaver.enabled && site.sync.maintainInfo;
+  const takeOver = usesRecords && server !== undefined && answers.tested ? ` ${await takeOverRecords(services, site, server)}` : '';
   const actions = server === undefined ? ['Open Site Folder'] : ['Open Site Folder', 'Test Connection'];
   const where = server === undefined ? '' : ` with the server ${server.name}${answers.tested ? '' : '. The connection was not tested'}`;
   void services
     .prompter()
-    .inform(`Added "${site.name}"${where}.`, actions)
+    .inform(`Added "${site.name}"${where}.${takeOver}`, actions)
     .then((choice) => {
       const node = { kind: 'site', site };
       if (choice === 'Open Site Folder') {
