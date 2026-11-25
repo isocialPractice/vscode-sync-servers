@@ -20,6 +20,9 @@ Until the first stable release, versions use the pre-release form
   either side and whatever the case of its name. Put and Get of that file
   alone say so, saving it uploads nothing, and a copy already on a server
   stays there.
+- The engine comes from npm at `2.0.0`: `@isocialpractice/cmd-sync-servers`
+  pinned to that version and checked by its integrity hash in
+  `package-lock.json`, with its licence in `THIRD_PARTY_NOTICES.md`.
 - The Explorer and the Remote Files view mark `_notes/dwsync.xml` with a
   dimmed `⊘` and the tooltip `Dreamweaver's synchronization records: never
   synchronized.`, never as a file waiting to be put or got.

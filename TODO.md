@@ -227,17 +227,17 @@ records.
   - **Goal**: Resolve to [Phase V2, step 3](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
 - [x] The extension's checks and the commit
   - **Goal**: Resolve to [Phase V2, step 4](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
-- [ ] The report
+- [x] The report
   - **Goal**: Resolve to [Phase V2, step 5](.claude/prompts/use-dwsync-file.prompt.md#phase-v2-add-site-synchronize-and-the-documentation)
-- [ ] Pin the engine's `2.0.0` from npm
+- [x] Pin the engine's `2.0.0` from npm
   - **Goal**: Resolve to [Phase V3, step 1](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
-- [ ] A clean install, the notices and the extension's checks
+- [x] A clean install, the notices and the extension's checks
   - **Goal**: Resolve to [Phase V3, step 2](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
-- [ ] Changelog, the date and the commit
+- [x] Changelog, the date and the commit
   - **Goal**: Resolve to [Phase V3, step 3](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
-- [ ] The report
+- [x] The report
   - **Goal**: Resolve to [Phase V3, step 4](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
-- [ ] Close the plan
+- [x] Close the plan
   - **Goal**: Resolve to [Phase V3, step 5](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
 
 ## Later Roadmap - paused
