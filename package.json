@@ -674,7 +674,7 @@
     "pack:check": "node scripts/build.mts --production && node scripts/pack-check.mts"
   },
   "dependencies": {
-    "@isocialpractice/cmd-sync-servers": "2.0.0",
+    "@isocialpractice/cmd-sync-servers": "2.1.0",
     "zod": "4.6.7"
   },
   "devDependencies": {

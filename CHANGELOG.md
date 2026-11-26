@@ -41,6 +41,9 @@ Until the first stable release, versions use the pre-release form
 - The extension runs the engine `2.1.0`, which brings two packages into
   the bundle: `@jhauga/timecal` `1.1.1` and `getfiledate` `1.0.0`, both
   MIT, with their licences in `THIRD_PARTY_NOTICES.md`.
+- The engine comes from npm at `2.1.0`: `@isocialpractice/cmd-sync-servers`
+  pinned to that version and checked by its integrity hash in
+  `package-lock.json`, as are its two packages.
 
 ## [1.0.0-alpha.2.0.0] - 2026-11-24
 
