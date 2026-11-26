@@ -88,9 +88,9 @@ suite('Synchronize', () => {
   }
 
   /** Puts the files on both sides and records them as synchronized. */
-  async function synced(site: Site, local: string, files: Record<string, string>): Promise<void> {
+  async function synced(site: Site, local: string, files: Record<string, string>, time = BASE): Promise<void> {
     for (const [name, content] of Object.entries(files)) {
-      write(local, name, content);
+      write(local, name, content, time);
     }
     await preview(site, 'put');
     await run();
@@ -391,13 +391,17 @@ suite('Synchronize', () => {
     await vscode.commands.executeCommand('workbench.action.closeAllEditors');
   });
 
-  // A file a test writes is created now, so every file of these sites is
-  // recent by the real clock: the range leaves out only what is in sync.
-  // The engine's own tests show an older file being left out.
+  // The files of these sites are modified in the last minute, so every one
+  // is recent and the range leaves out only what is in sync. An older
+  // modification time would make a file old on macOS, which takes it as the
+  // creation time too. The engine's own tests show an older file being left
+  // out.
+  const aMinuteAgo = (): number => Date.now() - 60_000;
+
   test('Put files from a time range lists the recent files that differ under Put, titled for the range, and puts them', async () => {
     const { site, local, remote } = await newSite();
-    await synced(site, local, { 'index.html': 'v1', 'about.html': 'v1', 'css/site.css': 'body {}' });
-    write(local, 'about.html', 'v2', LATER);
+    await synced(site, local, { 'index.html': 'v1', 'about.html': 'v1', 'css/site.css': 'body {}' }, aMinuteAgo());
+    write(local, 'about.html', 'v2', Date.now());
     prompter.answer('range', '1d');
     await vscode.commands.executeCommand('syncServers.synchronize', node(site));
     assert.equal(api.preview.heading(), `${site.name} and Backup: Put files from the last day`);
@@ -419,7 +423,7 @@ suite('Synchronize', () => {
 
   test('a time range has nothing to put in a site in sync, and finds no recent file in an empty one', async () => {
     const { site, local, remote } = await newSite();
-    await synced(site, local, { 'index.html': 'v1', 'contact.html': 'v1' });
+    await synced(site, local, { 'index.html': 'v1', 'contact.html': 'v1' }, aMinuteAgo());
     prompter.answer('range', '2d');
     await vscode.commands.executeCommand('syncServers.synchronize', node(site));
     assert.equal(api.preview.pending, undefined);
@@ -435,9 +439,9 @@ suite('Synchronize', () => {
 
   test('a time range keeps to the files chosen in the Explorer', async () => {
     const { site, local, remote } = await newSite();
-    await synced(site, local, { 'index.html': 'v1', 'css/site.css': 'v1' });
-    write(local, 'index.html', 'v2', LATER);
-    write(local, 'css/site.css', 'v2', LATER);
+    await synced(site, local, { 'index.html': 'v1', 'css/site.css': 'v1' }, aMinuteAgo());
+    write(local, 'index.html', 'v2', Date.now());
+    write(local, 'css/site.css', 'v2', Date.now());
     prompter.answer('selection', 'range', '1w');
     await vscode.commands.executeCommand('syncServers.synchronize', vscode.Uri.file(path.join(local, 'css')));
     const steps = prompter.asked.slice(-3).map((entry) => [entry.kind, (entry.question as TextQuestion).step, (entry.question as TextQuestion).totalSteps]);
