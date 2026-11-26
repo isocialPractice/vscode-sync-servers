@@ -45,6 +45,12 @@ Until the first stable release, versions use the pre-release form
   pinned to that version and checked by its integrity hash in
   `package-lock.json`, as are its two packages.
 
+### Fixed
+
+- Synchronize opens on the answers last given for the site when it is run
+  again right after a synchronization, instead of the answers given before
+  them.
+
 ## [1.0.0-alpha.2.0.0] - 2026-11-24
 
 ### Changed

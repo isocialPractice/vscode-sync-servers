@@ -26,6 +26,7 @@ import { RemoteDocuments } from './preview/remote-documents.ts';
 import { PreviewView } from './preview/view.ts';
 import { createHost } from './host.ts';
 import { channelSink } from './log.ts';
+import { WindowMemento } from './memento.ts';
 import { SecretStorageStore } from './secrets.ts';
 import { SiteSettings } from './settings/panel.ts';
 import { SitesModel } from './sites-model.ts';
@@ -125,7 +126,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TestAp
   const previewTree = vscode.window.createTreeView(VIEWS.preview, { treeDataProvider: previewView, canSelectMany: true, manageCheckboxStateManually: true });
   previewView.attach(previewTree);
   const remoteDocuments = new RemoteDocuments();
-  const sync: SyncServices = { ...services, preview, previewView, remoteDocuments, memory: context.globalState };
+  const sync: SyncServices = { ...services, preview, previewView, remoteDocuments, memory: new WindowMemento(context.globalState) };
   const sitesView = new SitesView(model);
   const statusBar = new StatusBar(model, { onDidChange: preview.onDidChange, current: () => ({ running: preview.running, attention: preview.attention }) });
   const marks = new ExplorerMarks(model, preview);
