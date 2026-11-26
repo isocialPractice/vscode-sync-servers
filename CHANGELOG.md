@@ -29,6 +29,12 @@ Until the first stable release, versions use the pre-release form
     how many recent files it compared.
   - The answer is remembered for each site with the others of the dialog,
     and the list opens on it the next time.
+- The files of a time range in the documentation: a section of its own on
+  the Synchronize page, with the four units, what counts as recent and
+  what the preview holds; the Synchronize command on the commands page;
+  the answers of the dialog in getting started and the README; and two
+  troubleshooting entries, for a file changed lately that is not listed
+  and for a range that is refused.
 
 ### Changed
 

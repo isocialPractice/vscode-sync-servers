@@ -260,11 +260,11 @@ engine's 2.1.0, which puts the files of a time range.
   - **Goal**: Resolve to [Phase T1, step 5](.claude/prompts/use-date-range.prompt.md#phase-t1-the-choice-in-synchronize)
 - [x] Changelog, the extension's checks and the commit
   - **Goal**: Resolve to [Phase T1, step 6](.claude/prompts/use-date-range.prompt.md#phase-t1-the-choice-in-synchronize)
-- [ ] The integration test of a range on a local folder server
+- [x] The integration test of a range on a local folder server
   - **Goal**: Resolve to [Phase T2, step 1](.claude/prompts/use-date-range.prompt.md#phase-t2-the-integration-test-and-the-documentation)
-- [ ] Documents and changelog
+- [x] Documents and changelog
   - **Goal**: Resolve to [Phase T2, step 2](.claude/prompts/use-date-range.prompt.md#phase-t2-the-integration-test-and-the-documentation)
-- [ ] The extension's checks and the commit
+- [x] The extension's checks and the commit
   - **Goal**: Resolve to [Phase T2, step 3](.claude/prompts/use-date-range.prompt.md#phase-t2-the-integration-test-and-the-documentation)
 - [ ] The report
   - **Goal**: Resolve to [Phase T2, step 4](.claude/prompts/use-date-range.prompt.md#phase-t2-the-integration-test-and-the-documentation)

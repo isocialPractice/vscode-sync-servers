@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
-<meta name="description" content="Synchronize a site in Sync Servers for VS Code: the dialog, the Sync Preview, resolving files changed on both sides, Compare, Put and Get.">
+<meta name="description" content="Synchronize a site in Sync Servers for VS Code: the dialog, the files of a time range, the Sync Preview, resolving files changed on both sides, Compare, Put and Get.">
 <title>Synchronize | Sync Servers for VS Code</title>
 <link rel="stylesheet" href="assets/site.css">
 </head>
@@ -36,10 +36,34 @@
 <p><strong>Synchronize...</strong> asks the questions of Dreamweaver's Synchronize dialog, each answer preselected from the last time:</p>
 <ol>
   <li><strong>What to synchronize</strong>: the entire site, or the files chosen in the Explorer. This question appears only when it started from an Explorer selection.</li>
-  <li><strong>Which way</strong>: Put newer files to remote, Get newer files from remote, or Get and put newer files.</li>
-  <li><strong>Files only on the other side</strong>: keep them, or delete them, worded for the direction, such as <em>Delete remote files not on local drive</em>.</li>
+  <li><strong>Which way</strong>: <a href="#range">Put files from a time range</a>, Put newer files to remote, Get newer files from remote, or Get and put newer files. The first time, the list opens on Put newer files to remote.</li>
+  <li><strong>Files only on the other side</strong>: keep them, or delete them, worded for the direction, such as <em>Delete remote files not on local drive</em>. After Put files from a time range, the range is asked here instead.</li>
 </ol>
 <p>The extension then compares both sides, with progress and a Cancel button. Unchanged files are counted, never listed; if nothing differs, a message says the site is in sync, and what the comparison found in sync is saved, so the next one does not work it out again.</p>
+
+<h2 id="range">The files of a time range</h2>
+<p><strong>Put files from a time range</strong> puts only the files you worked on lately, such as the pages edited today, without comparing the rest of the site. Its next question is a box that asks <em>Put files created or modified in the last</em>, and holds <code>1d</code>, or the range you gave last time for the site. Press Enter to take it, or type another. An empty box shows <code>1d or 24h</code>, and an empty answer means <code>1d</code>.</p>
+<p>A range is a number and one unit, in lower case, with nothing between them:</p>
+<table>
+  <caption>Units of a time range</caption>
+  <thead><tr><th scope="col">Unit</th><th scope="col">Example</th><th scope="col">Means</th></tr></thead>
+  <tbody>
+    <tr><td><code>m</code>, minutes</td><td><code>90m</code></td><td>The last 90 minutes</td></tr>
+    <tr><td><code>h</code>, hours</td><td><code>24h</code></td><td>The last 24 hours</td></tr>
+    <tr><td><code>d</code>, days</td><td><code>2d</code></td><td>The last 2 days</td></tr>
+    <tr><td><code>w</code>, weeks</td><td><code>1w</code></td><td>The last week</td></tr>
+  </tbody>
+</table>
+<p>The number can have a decimal part, such as <code>1.5h</code>. Anything else, such as <code>2D</code> or <code>2 d</code>, is refused under the box with the form a range takes.</p>
+<ul>
+  <li>A file counts when it was created or last modified within the range, by this computer's clock and the dates its file system keeps for it. A file copied into the site counts from the moment it arrived, whatever its modification time.</li>
+  <li>A file open with unsaved changes counts by its time on disk, and the server gets the copy on disk. Save it first.</li>
+  <li>Only those files are compared, and only they are looked up on the server, as single files, several at a time. A short range in a large site is quick; when most of the site is recent, Put newer files to remote is quicker.</li>
+  <li>The range applies to the entire site, or to the files chosen in the Explorer when the dialog asked.</li>
+  <li>The preview holds only those files, titled for the range, such as <em>My Site and Production: Put files from the last 2 days</em>. It never lists a delete, a Get, or a file only the server has. A recent file that also changed on the server waits for a decision, and cloaking, the sensitive-file guard and Restricted Mode apply as in any synchronization.</li>
+  <li>With no recent file, a message says so, such as <code>No file of "My Site" was created or modified in the last 2 days.</code>, and nothing connects. When every recent file is already the same on the server, the message says how many were compared, such as <code>Nothing from the last 2 days needs putting to Production. 3 files compared.</code></li>
+</ul>
+<p>The command line does the same with <code>sync-servers sync --put recent --range 2d</code>.</p>
 
 <h2 id="preview">The Sync Preview</h2>
 <p>The preview groups the files by what will happen to each, with a count on every group, decisions first:</p>
@@ -55,7 +79,7 @@
     <tr><td>Errors</td><td>Names that cannot be used on this system, case twins and links, which never move.</td></tr>
   </tbody>
 </table>
-<p>The view's heading names the site, the server and the direction; its description gives the summary, such as <em>Files: 36 will be updated, 169 will be skipped, 2 need a decision</em>. The setting <code>syncServers.preview.groupBy</code> groups by folder instead.</p>
+<p>The view's heading names the site, the server and the direction, or the <a href="#range">time range</a>; its description gives the summary, such as <em>Files: 36 will be updated, 169 will be skipped, 2 need a decision</em>. The setting <code>syncServers.preview.groupBy</code> groups by folder instead.</p>
 
 <h3 id="resolving">Choosing for a file</h3>
 <p>A file under Resolve offers, inline and in its context menu:</p>

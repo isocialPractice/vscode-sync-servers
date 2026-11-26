@@ -72,6 +72,11 @@ so the first preview lists only real differences.
 in the Explorer, the same way, and **Compare with Remote** shows the
 server's copy beside yours.
 
+**Put files from a time range**, the first answer of Synchronize, puts
+only the files created or modified lately: it asks for a range such as
+`90m`, `24h`, `2d` or `1w`, holds `1d` for you, and previews just those
+files.
+
 ## In the Explorer
 
 With a site's folder open, the Explorer marks what changed since the last

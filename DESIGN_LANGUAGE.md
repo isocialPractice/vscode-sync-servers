@@ -20,7 +20,7 @@ theme without carrying a palette of its own.
   background; everything else is secondary. A 5-second squint test at 30 %
   opacity must still find it.
 - **Few choices per step.** The sync dialog is three short questions of two
-  or three answers each. The preview groups rows by action with counts, so
+  to four answers each. The preview groups rows by action with counts, so
   the eye lands on Resolve first.
 - **Progressive disclosure.** Advanced Settings and the Advanced tab stay
   collapsed until asked for. Row actions appear inline on hover and on
@@ -37,7 +37,7 @@ theme without carrying a palette of its own.
 | Sites view | Native tree | Sites, their servers, Remote and Testing badges |
 | Remote Files view | Native tree | The active site's Remote server, listed folder by folder |
 | Sync Preview view | Native tree with checkboxes | The pending plan, grouped by action |
-| Synchronize... | Native quick input, three steps | Scope, direction, delete option |
+| Synchronize... | Native quick input, three steps | Scope, direction, delete option or time range |
 | Site Settings | Webview panel | The site form: categories on the left, the form on the right |
 | Status bar item | Native | The active site and server, sync progress |
 | Explorer marks | Native file decorations | Cloaked, changed and conflicting files |
@@ -404,6 +404,7 @@ for each site are preselected.
    Selected Local Files Only            3 files selected in the Explorer
 
  Synchronize My Site (2/3)
+   Put files from a time range          Only the files created or modified lately
  > Put newer files to remote
    Get newer files from remote
    Get and put newer files
@@ -414,7 +415,19 @@ for each site are preselected.
 ```
 
 Without a selection in the Explorer, the first question is left out and
-the dialog has two steps.
+the dialog has two steps. The second question opens on Put newer files to
+remote until a site's last answer was another.
+
+After Put files from a time range, the last step is a box in place of the
+delete option. It holds `1d`, or the last range given for the site, shows
+`1d or 24h` when emptied, takes an empty answer as `1d`, and says under
+the box how a range is written when the text is not one:
+
+```text
+ Synchronize My Site (3/3)                                           [<-]
+ [1d                                                                    ]
+ Put files created or modified in the last
+```
 
 ### Sync Preview View
 
@@ -435,10 +448,13 @@ the dialog has two steps.
 ```
 
 The title bar holds Synchronize Checked Files, Check All, Uncheck All and
-Close Preview; the badge counts the files that need a decision. Resolve rows
-carry no checkbox until an action is chosen: inline Use Local, Use Remote,
-Skip and Compare, or the context menu, which adds Mark Synchronized and the
-deletes a row can take. Choosing one moves the row to that group, checked.
+Close Preview; the badge counts the files that need a decision. A preview
+of the files of a time range is headed for the range instead of the
+direction: `My Site and Production: Put files from the last 2 days`.
+Resolve rows carry no checkbox until an action is chosen: inline Use
+Local, Use Remote, Skip and Compare, or the context menu, which adds Mark
+Synchronized and the deletes a row can take. Choosing one moves the row to
+that group, checked.
 A held-back file stays in Guarded whatever is chosen for it. Several rows
 can be chosen at once, and every action is also in the Command Palette
 while a preview waits, acting on the chosen rows.

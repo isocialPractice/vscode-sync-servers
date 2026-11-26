@@ -73,6 +73,12 @@
   <dt id="every-file">Every file shows as changed after a server change</dt>
   <dd>Some servers cannot set file times, or round them. Each side is compared with its own record, so this usually settles after one sync. If not, raise the Time tolerance in the Synchronization category, or compare by checksum.</dd>
 
+  <dt id="range-not-listed">A file changed lately is not listed in a time range</dt>
+  <dd><strong>Put files from a time range</strong> lists a file only when it was created or last modified within the range, by this computer's clock, and differs from the server. Check, in order: both of its dates are older than the start of the range, so a longer range, such as <code>1w</code>, takes it in; it is cloaked; it is already the same on the server, so the message counts it among the files compared instead of listing it; or its changes are not saved, since the time on disk is the one that counts. A file whose clock was wrong when it was saved carries that time: <a href="synchronize.html#dialog">Put newer files to remote</a> compares the whole site instead.</dd>
+
+  <dt id="range-refused">A time range is refused</dt>
+  <dd>A range is a number and one unit in lower case, with nothing between them: <code>m</code> for minutes, <code>h</code> for hours, <code>d</code> for days or <code>w</code> for weeks, such as <code>90m</code>, <code>24h</code>, <code>2d</code> or <code>1w</code>. A capital unit such as <code>2D</code>, a space, a sign, <code>0</code>, two ranges together, and months, years or seconds are refused. An empty box means <code>1d</code>.</dd>
+
   <dt id="dreamweaver-every-file">Every file is listed although Dreamweaver had the site in sync</dt>
   <dd>The extension reads Dreamweaver's records only for a site with <a href="site-settings.html#dreamweaver">Dreamweaver sync files</a> on, which needs Maintain sync information. With it on, check that the server's <a href="site-settings.html#advanced">Dreamweaver server name</a> is the name Dreamweaver used: the host and the folder as they were typed in Dreamweaver's site definition, such as <code>203.0.113.10//public_html/</code>. The names are in the <code>server</code> attribute of the entries in <code>_notes/dwsync.xml</code>.</dd>
 

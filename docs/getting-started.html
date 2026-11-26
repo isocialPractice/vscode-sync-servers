@@ -71,11 +71,11 @@
 <h2 id="first-sync">4. Synchronize</h2>
 <ol>
   <li>Choose <strong>Synchronize...</strong> on the site, or click the status bar item.</li>
-  <li>Answer <strong>Put newer files to remote</strong>, then <strong>Keep remote files that are not on the local drive</strong>.</li>
+  <li>Answer <strong>Put newer files to remote</strong>, the answer the list opens on, below <strong>Put files from a time range</strong>, then <strong>Keep remote files that are not on the local drive</strong>.</li>
   <li>The Sync Preview opens with every file that would move, checked. Uncheck anything that should stay.</li>
   <li>Choose <strong>Synchronize Checked Files</strong> in the preview's title bar.</li>
 </ol>
-<p>A notification reports <code>Synchronized 12 files. 0 failed. 0 skipped.</code> From now on, the extension remembers what each side looked like, so a file changed on both sides waits for your decision. <a href="synchronize.html">Synchronize</a> covers the preview in full.</p>
+<p>A notification reports <code>Synchronized 12 files. 0 failed. 0 skipped.</code> From now on, the extension remembers what each side looked like, so a file changed on both sides waits for your decision. Once the site is in sync, <strong>Put files from a time range</strong> puts only the files you worked on lately, such as those of the last day: see <a href="synchronize.html#range">The files of a time range</a>. <a href="synchronize.html">Synchronize</a> covers the preview in full.</p>
 
 <h2 id="share">Sharing the list with the command line</h2>
 <p>The extension and <code>sync-servers</code> read the same <code>sites.json</code>: in <code>%APPDATA%\sync-servers</code> on Windows, <code>~/Library/Application Support/sync-servers</code> on macOS, and <code>~/.config/sync-servers</code> elsewhere. The setting <code>syncServers.configDir</code>, or <code>SYNC_SERVERS_HOME</code>, points both somewhere else. Passwords are the exception: each keeps its own, so each asks once.</p>

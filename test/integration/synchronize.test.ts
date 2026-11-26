@@ -13,7 +13,7 @@ import { REMOTE_SCHEME } from '../../src/contributions.ts';
 import type { TestApi } from '../../src/extension.ts';
 import { deleteButton } from '../../src/preview/controller.ts';
 import type { PreviewNode } from '../../src/preview/view.ts';
-import type { ModalQuestion } from '../../src/ui/prompt.ts';
+import type { ChoiceQuestion, ModalQuestion, TextQuestion } from '../../src/ui/prompt.ts';
 import { filetime, folderEntry, writeDwsync } from '../helpers/dwsync.ts';
 import { testApi } from '../helpers/extension.ts';
 import { ScriptedPrompter } from '../helpers/prompter.ts';
@@ -389,6 +389,68 @@ suite('Synchronize', () => {
     assert.equal(summary?.uri.scheme, REMOTE_SCHEME);
     assert.match(summary.getText(), /SHA-256 [0-9a-f]{64}[\s\S]*The two copies differ\./);
     await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  });
+
+  // A file a test writes is created now, so every file of these sites is
+  // recent by the real clock: the range leaves out only what is in sync.
+  // The engine's own tests show an older file being left out.
+  test('Put files from a time range lists the recent files that differ under Put, titled for the range, and puts them', async () => {
+    const { site, local, remote } = await newSite();
+    await synced(site, local, { 'index.html': 'v1', 'about.html': 'v1', 'css/site.css': 'body {}' });
+    write(local, 'about.html', 'v2', LATER);
+    prompter.answer('range', '1d');
+    await vscode.commands.executeCommand('syncServers.synchronize', node(site));
+    assert.equal(api.preview.heading(), `${site.name} and Backup: Put files from the last day`);
+    assert.deepEqual(groups(), ['Put']);
+    assert.deepEqual(rows().map((entry) => [entry.item.path, entry.item.action, entry.item.checked]), [['about.html', 'put', true]]);
+    await run();
+    assert.match(lastMessage(), /^Synchronized 1 file\. 0 failed\./);
+    assert.equal(read(remote, 'about.html'), 'v2');
+
+    // The next Synchronize opens on the range, with the range given last in its box, and an empty answer is 1d.
+    prompter.answer('range', '');
+    await vscode.commands.executeCommand('syncServers.synchronize', node(site));
+    const [way, box] = prompter.asked.slice(-2).map((entry) => entry.question);
+    assert.equal((way as ChoiceQuestion<unknown>).selected, 'range');
+    assert.equal((box as TextQuestion).value, '1d');
+    assert.equal(api.preview.pending, undefined, 'nothing to put, so no preview');
+    assert.equal(lastMessage(), 'Nothing from the last day needs putting to Backup. 3 files compared.');
+  });
+
+  test('a time range has nothing to put in a site in sync, and finds no recent file in an empty one', async () => {
+    const { site, local, remote } = await newSite();
+    await synced(site, local, { 'index.html': 'v1', 'contact.html': 'v1' });
+    prompter.answer('range', '2d');
+    await vscode.commands.executeCommand('syncServers.synchronize', node(site));
+    assert.equal(api.preview.pending, undefined);
+    assert.equal(lastMessage(), 'Nothing from the last 2 days needs putting to Backup. 2 files compared.');
+    assert.deepEqual(readdirSync(remote).sort(), ['contact.html', 'index.html']);
+
+    const empty = await newSite();
+    prompter.answer('range', '90m');
+    await vscode.commands.executeCommand('syncServers.synchronize', node(empty.site));
+    assert.equal(api.preview.pending, undefined);
+    assert.equal(lastMessage(), `No file of "${empty.site.name}" was created or modified in the last 90 minutes.`);
+  });
+
+  test('a time range keeps to the files chosen in the Explorer', async () => {
+    const { site, local, remote } = await newSite();
+    await synced(site, local, { 'index.html': 'v1', 'css/site.css': 'v1' });
+    write(local, 'index.html', 'v2', LATER);
+    write(local, 'css/site.css', 'v2', LATER);
+    prompter.answer('selection', 'range', '1w');
+    await vscode.commands.executeCommand('syncServers.synchronize', vscode.Uri.file(path.join(local, 'css')));
+    const steps = prompter.asked.slice(-3).map((entry) => [entry.kind, (entry.question as TextQuestion).step, (entry.question as TextQuestion).totalSteps]);
+    assert.deepEqual(steps, [
+      ['choose', 1, 3],
+      ['choose', 2, 3],
+      ['text', 3, 3],
+    ]);
+    assert.equal(api.preview.heading(), `${site.name} and Backup: Put files from the last week`);
+    assert.deepEqual(rows().map((entry) => entry.item.path), ['css/site.css']);
+    await run();
+    assert.equal(read(remote, 'css/site.css'), 'v2');
+    assert.equal(read(remote, 'index.html'), 'v1', 'a file outside the selection stays as it was');
   });
 
   test('names that cannot be used locally, case twins and links outside the site are listed and never written', async function () {
