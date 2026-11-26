@@ -3,8 +3,11 @@ import path from 'node:path';
 import {
   DREAMWEAVER_TEXT,
   dreamweaverInSync,
+  formatRange,
   isDwsyncPath,
   isSyncError,
+  noRecentFiles,
+  rangeStart,
   resultLine,
   SyncSession,
   type Action,
@@ -13,15 +16,17 @@ import {
   type Server,
   type Site,
   type SyncPlan,
+  type TimeRange,
 } from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
-import { askSync, type SyncChoice } from '../flows/sync-options.ts';
+import { askSync, readRange, type SyncChoice } from '../flows/sync-options.ts';
 import { binarySummary, isBinary, type ComparedCopy } from '../preview/compare-text.ts';
 import type { PreviewController } from '../preview/controller.ts';
 import type { RemoteDocuments } from '../preview/remote-documents.ts';
 import { isPreviewRow, type PreviewNode, type PreviewView } from '../preview/view.ts';
 import { realPathOf } from '../real-path.ts';
 import { isRemoteNode } from '../remote/nodes.ts';
+import { nothingToRun } from '../sync-text.ts';
 import { isSitesNode } from '../views/sites-view.ts';
 import { chooseSite, requireSites, type Services } from './services.ts';
 
@@ -140,8 +145,13 @@ export function dreamweaverLine(plan: Pick<SyncPlan, 'adopted'>, clock: 'known' 
   return '';
 }
 
-/** Scans both sides and shows the plan in the Sync Preview, or says the site is in sync, saving what it found. */
-export async function planAndShow(services: SyncServices, site: Site, server: Server, options: Omit<PlanOptions, 'signal' | 'onProgress'>): Promise<void> {
+/**
+ * Scans both sides and shows the plan in the Sync Preview, or says the site
+ * is in sync, saving what it found. With a time range, whose start is the
+ * options' `changedSince`, the messages and the preview name the range, and
+ * a range with no recent file says so without settling anything.
+ */
+export async function planAndShow(services: SyncServices, site: Site, server: Server, options: Omit<PlanOptions, 'signal' | 'onProgress'>, range?: TimeRange): Promise<void> {
   const session = await openSession(services, site, server);
   let plan;
   try {
@@ -172,23 +182,28 @@ export async function planAndShow(services: SyncServices, site: Site, server: Se
     }
     throw error;
   }
+  if (range !== undefined && plan.scope.kind === 'paths' && plan.scope.paths.length === 0) {
+    await session.close();
+    void services.prompter().inform(noRecentFiles(range, site.name));
+    return;
+  }
   if (plan.items.length === 0) {
     let records: string;
     try {
       // With nothing to run, what the plan found in sync is still saved, so the next comparison does not work it out again.
       await session.settle(plan);
-      records = dreamweaverLine(plan, session.dreamweaverClock, options.scope?.kind !== 'paths');
+      records = dreamweaverLine(plan, session.dreamweaverClock, range === undefined && options.scope?.kind !== 'paths');
     } finally {
       await session.close();
     }
-    void services.prompter().inform(`"${site.name}" and ${server.name} are in sync. ${String(plan.unlisted)} ${plan.unlisted === 1 ? 'file' : 'files'} compared.${records}`);
+    void services.prompter().inform(`${nothingToRun(site.name, server.name, plan.unlisted, range)}${records}`);
     return;
   }
-  services.logger.info('Preview ready', { siteId: site.id, serverId: server.id, direction: plan.direction, rows: plan.items.length });
-  await services.preview.show({ session, plan, site, server });
+  services.logger.info('Preview ready', { siteId: site.id, serverId: server.id, direction: plan.direction, rows: plan.items.length, ...(range === undefined ? {} : { range: formatRange(range) }) });
+  await services.preview.show({ session, plan, site, server, range });
 }
 
-/** Synchronize...: the three questions, then the plan in the Sync Preview. */
+/** Synchronize...: the three questions, then the plan in the Sync Preview, of the files of a time range when one was given. */
 export async function synchronize(services: SyncServices, arg: unknown, extra: unknown): Promise<void> {
   if (!requireSites(services)) {
     return;
@@ -223,12 +238,23 @@ export async function synchronize(services: SyncServices, arg: unknown, extra: u
   if (choice === undefined) {
     return;
   }
+  const range = choice.range === undefined ? undefined : readRange(choice.range);
+  if (choice.range !== undefined && range === undefined) {
+    return;
+  }
   await services.memory.update(key, choice);
-  await planAndShow(services, site, server, {
-    direction: choice.direction,
-    deleteOrphans: choice.deleteOrphans,
-    scope: choice.scope === 'selection' && selection.length > 0 && !selection.includes('') ? { kind: 'paths', paths: selection } : { kind: 'site' },
-  });
+  await planAndShow(
+    services,
+    site,
+    server,
+    {
+      direction: choice.direction,
+      deleteOrphans: choice.deleteOrphans,
+      scope: choice.scope === 'selection' && selection.length > 0 && !selection.includes('') ? { kind: 'paths', paths: selection } : { kind: 'site' },
+      ...(range === undefined ? {} : { changedSince: rangeStart(range) }),
+    },
+    range,
+  );
 }
 
 async function saveOpenFiles(services: Services, uris: readonly vscode.Uri[]): Promise<boolean> {

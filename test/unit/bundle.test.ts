@@ -50,6 +50,16 @@ test('the engine and the extension share one zod release, so the bundle carries 
   assert.equal(copies.size, 1);
 });
 
+test("the engine's two date packages are in the extension's bundle, each with its own licence file", () => {
+  const packages = bundledPackages(extension, ROOT);
+  for (const name of ['@jhauga/timecal', 'getfiledate']) {
+    const found = packages.find((pkg) => pkg.name === name);
+    assert.ok(found, `${name} is bundled`);
+    assert.equal(found.license, 'MIT', name);
+    assert.match(found.licenseText, /^MIT License/, `${name} brings its own LICENSE file`);
+  }
+});
+
 test('THIRD_PARTY_NOTICES.md lists every bundled package; `npm run notices` rewrites it', () => {
   const packages = bundledPackages(mergeMeta(extension, webview), ROOT);
   assert.ok(packages.some((pkg) => pkg.name === '@isocialpractice/cmd-sync-servers'));

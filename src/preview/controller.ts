@@ -1,5 +1,4 @@
 import {
-  DIRECTION_TITLES,
   isSyncError,
   resultLine,
   type Action,
@@ -8,10 +7,12 @@ import {
   type SyncPlan,
   type SyncResult,
   type SyncSession,
+  type TimeRange,
 } from '@isocialpractice/cmd-sync-servers';
 import * as vscode from 'vscode';
 import type { Services } from '../commands/services.ts';
 import { CONTEXT, VIEWS } from '../contributions.ts';
+import { previewHeading } from '../sync-text.ts';
 
 /** A plan waiting in the Sync Preview, with the session that made it. */
 export interface Pending {
@@ -19,6 +20,8 @@ export interface Pending {
   readonly plan: SyncPlan;
   readonly site: Site;
   readonly server: Server;
+  /** The time range the plan was made from, which the plan does not keep itself. */
+  readonly range?: TimeRange | undefined;
 }
 
 /** A finished run kept in the preview because some files failed. */
@@ -273,8 +276,8 @@ export class PreviewController implements vscode.Disposable {
   /** The heading the preview shows above its rows. */
   heading(): string {
     if (this.#pending !== undefined) {
-      const { site, server, plan } = this.#pending;
-      return `${site.name} and ${server.name}: ${DIRECTION_TITLES[plan.direction]}`;
+      const { site, server, plan, range } = this.#pending;
+      return previewHeading(site.name, server.name, plan.direction, range);
     }
     if (this.#finished !== undefined) {
       return `${this.#finished.site.name}: ${resultLine(this.#finished.result)}`;

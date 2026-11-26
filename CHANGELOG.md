@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Until the first stable release, versions use the pre-release form
 `1.0.0-alpha.x.y.z`, where `x.y.z` counts alpha iterations toward `1.0.0`.
 
+## [1.0.0-alpha.2.1.0] - 2026-11-26
+
+### Added
+
+- Put files from a time range, the first answer of Synchronize's "Which
+  way" question, above Put newer files to remote: a Put of only the local
+  files created or modified in the last minutes, hours, days or weeks.
+  - A box asks for the range, written as a number and `m`, `h`, `d` or
+    `w`, such as `90m`, `24h`, `2d` or `1w`. It holds `1d`, or the range
+    last given for the site, shows `1d or 24h` when emptied, and takes an
+    empty answer as `1d`. Any other text is refused under the box.
+  - A file is recent when it was created or last modified in the range,
+    by this computer's clock and the dates its file system keeps for it.
+    Only the recent files are compared and looked up on the server, in the
+    entire site or in the files chosen in the Explorer.
+  - The range takes the place of the delete question: such a Put never
+    lists a delete, a Get, or a file only the server has.
+  - The Sync Preview is titled for the range, such as `My Site and
+    Production: Put files from the last 2 days`. With no recent file,
+    Synchronize says so without connecting; with nothing to put, it says
+    how many recent files it compared.
+  - The answer is remembered for each site with the others of the dialog,
+    and the list opens on it the next time.
+
+### Changed
+
+- The extension runs the engine `2.1.0`, which brings two packages into
+  the bundle: `@jhauga/timecal` `1.1.1` and `getfiledate` `1.0.0`, both
+  MIT, with their licences in `THIRD_PARTY_NOTICES.md`.
+
 ## [1.0.0-alpha.2.0.0] - 2026-11-24
 
 ### Changed
@@ -336,6 +366,7 @@ Until the first stable release, versions use the pre-release form
   outside its allowlist, and third-party notices for every bundled package.
 - Security policy, contribution guide and design language.
 
+[1.0.0-alpha.2.1.0]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.2.1.0
 [1.0.0-alpha.2.0.0]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.2.0.0
 [1.0.0-alpha.1.2.1]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.1.2.1
 [1.0.0-alpha.1.2.0]: https://github.com/isocialPractice/vscode-sync-servers/releases/tag/v1.0.0-alpha.1.2.0

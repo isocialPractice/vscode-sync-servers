@@ -1,16 +1,18 @@
-// The Synchronize dialog, the Sync Preview's rows, the summary shown for a
-// binary file, and the status bar during and after a run.
+// The Synchronize dialog with its time range, the Sync Preview's heading
+// and rows, the messages of a comparison with nothing to run, the summary
+// shown for a binary file, and the status bar during and after a run.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, test } from 'node:test';
-import type { Action, PlanItem, SyncResult } from '@isocialpractice/cmd-sync-servers';
-import { askSync, deleteLabel, keepLabel } from '../../src/flows/sync-options.ts';
+import { parseRange, RANGE_TEXT, RANGE_TITLE, type Action, type PlanItem, type SyncResult, type TimeRange } from '@isocialpractice/cmd-sync-servers';
+import { askSync, deleteLabel, keepLabel, RANGE_DESCRIPTION, RANGE_PLACEHOLDER, rangeProblem } from '../../src/flows/sync-options.ts';
 import { binarySummary, isBinary, MAX_DIFF_BYTES } from '../../src/preview/compare-text.ts';
 import { groupOf, groupRows, resultGroups, resultRow, rowView } from '../../src/preview/rows.ts';
 import { statusText } from '../../src/status-text.ts';
-import { BACK, type ChoiceQuestion } from '../../src/ui/prompt.ts';
+import { nothingToRun, previewHeading } from '../../src/sync-text.ts';
+import { BACK, type ChoiceQuestion, type TextQuestion } from '../../src/ui/prompt.ts';
 import { ScriptedPrompter } from '../helpers/prompter.ts';
 import { sampleSite } from '../helpers/sites.ts';
 
@@ -22,7 +24,7 @@ describe('the Synchronize dialog', () => {
     assert.ok(direction && remove);
     assert.deepEqual(
       direction.choices.map((choice) => choice.label),
-      ['Put newer files to remote', 'Get newer files from remote', 'Get and put newer files'],
+      ['Put files from a time range', 'Put newer files to remote', 'Get newer files from remote', 'Get and put newer files'],
     );
     assert.equal(direction.title, 'Synchronize My Site');
     assert.deepEqual([direction.step, direction.totalSteps, remove.step], [1, 2, 2]);
@@ -53,6 +55,132 @@ describe('the Synchronize dialog', () => {
     const prompter = new ScriptedPrompter(['put', BACK, 'get', false]);
     assert.equal((await askSync(prompter, { siteName: 'My Site', selection: 0 }))?.direction, 'get');
     assert.equal(await askSync(new ScriptedPrompter(['put', undefined]), { siteName: 'My Site', selection: 0 }), undefined);
+  });
+});
+
+describe('Put files from a time range in the Synchronize dialog', () => {
+  /** The questions a dialog asked, by kind. */
+  function questions(prompter: ScriptedPrompter): { ways: ChoiceQuestion<unknown>[]; boxes: TextQuestion[] } {
+    return {
+      ways: prompter.asked.filter((entry) => entry.kind === 'choose').map((entry) => entry.question as ChoiceQuestion<unknown>),
+      boxes: prompter.asked.filter((entry) => entry.kind === 'text').map((entry) => entry.question as TextQuestion),
+    };
+  }
+
+  test('the time range is the first of four ways, labelled as the engine labels it', async () => {
+    const prompter = new ScriptedPrompter([undefined]);
+    assert.equal(await askSync(prompter, { siteName: 'My Site', selection: 0 }), undefined);
+    const [way] = questions(prompter).ways;
+    assert.ok(way);
+    assert.deepEqual(
+      way.choices.map((choice) => choice.value),
+      ['range', 'put', 'get', 'both'],
+    );
+    const [first] = way.choices;
+    assert.ok(first);
+    assert.equal(first.label, RANGE_TITLE);
+    assert.equal(RANGE_TITLE, 'Put files from a time range');
+    assert.equal(first.description, RANGE_DESCRIPTION);
+    assert.equal(RANGE_DESCRIPTION, 'Only the files created or modified lately');
+  });
+
+  test('the way highlighted is Put newer files the first time, then the last way given, or the range when the last choice had one', async () => {
+    const highlighted = async (last?: Parameters<typeof askSync>[1]['last']): Promise<unknown> => {
+      const prompter = new ScriptedPrompter([undefined]);
+      await askSync(prompter, { siteName: 'My Site', selection: 0, last });
+      return questions(prompter).ways[0]?.selected;
+    };
+    assert.equal(await highlighted(), 'put');
+    assert.equal(await highlighted({ direction: 'get', deleteOrphans: false }), 'get');
+    assert.equal(await highlighted({ scope: 'site', direction: 'put', deleteOrphans: false, range: '2d' }), 'range');
+  });
+
+  test('the range and 2d: a Put without deletes, and no delete question', async () => {
+    const prompter = new ScriptedPrompter(['range', '2d']);
+    assert.deepEqual(await askSync(prompter, { siteName: 'My Site', selection: 0 }), { scope: 'site', direction: 'put', deleteOrphans: false, range: '2d' });
+    const { ways, boxes } = questions(prompter);
+    assert.equal(ways.length, 1, 'only the way was chosen from a list');
+    const [box] = boxes;
+    assert.ok(box);
+    assert.equal(box.title, 'Synchronize My Site');
+    assert.deepEqual([box.step, box.totalSteps], [2, 2]);
+    assert.equal(box.prompt, RANGE_TEXT.question);
+    assert.equal(box.prompt, 'Put files created or modified in the last');
+  });
+
+  test('an empty or blank answer is 1d; the box holds 1d the first time and the last range after; its placeholder is 1d or 24h', async () => {
+    for (const answer of ['', '   ']) {
+      assert.equal((await askSync(new ScriptedPrompter(['range', answer]), { siteName: 'My Site', selection: 0 }))?.range, '1d');
+    }
+    const first = new ScriptedPrompter(['range', '01d']);
+    assert.equal((await askSync(first, { siteName: 'My Site', selection: 0 }))?.range, '1d', 'the range is kept as the engine writes it');
+    assert.equal(questions(first).boxes[0]?.value, '1d');
+    assert.equal(questions(first).boxes[0]?.placeholder, '1d or 24h');
+    assert.equal(RANGE_PLACEHOLDER, '1d or 24h');
+    const again = new ScriptedPrompter(['range', '1w']);
+    assert.equal((await askSync(again, { siteName: 'My Site', selection: 0, last: { direction: 'put', deleteOrphans: false, range: '2d' } }))?.range, '1w');
+    assert.equal(questions(again).boxes[0]?.value, '2d');
+  });
+
+  test('the box refuses what is not a range with the format sentence, and takes the four units', async () => {
+    const prompter = new ScriptedPrompter(['range', undefined]);
+    assert.equal(await askSync(prompter, { siteName: 'My Site', selection: 0 }), undefined);
+    assert.equal(questions(prompter).boxes[0]?.validate, rangeProblem);
+    const refused = `Enter ${RANGE_TEXT.format}.`;
+    assert.equal(refused, 'Enter a number and a unit: m for minutes, h for hours, d for days or w for weeks, such as 90m, 24h, 2d or 1w.');
+    for (const answer of ['2M', '2 d', '0d', '--help', 'abc', '/?', '2d 3h']) {
+      assert.equal(rangeProblem(answer), refused, answer);
+    }
+    for (const answer of ['90m', '24h', '1.5h', '2d', '1w', ' 2d ', '', ' ']) {
+      assert.equal(rangeProblem(answer), undefined, answer);
+    }
+  });
+
+  test('Back from the range returns to the ways; Escape there cancels', async () => {
+    const back = new ScriptedPrompter(['range', BACK, 'get', false]);
+    assert.deepEqual(await askSync(back, { siteName: 'My Site', selection: 0 }), { scope: 'site', direction: 'get', deleteOrphans: false });
+    assert.deepEqual(
+      back.asked.map((entry) => entry.kind),
+      ['choose', 'text', 'choose', 'choose'],
+    );
+    assert.equal(questions(back).ways[1]?.selected, 'range', 'the way returned to is the one chosen');
+    assert.equal(await askSync(new ScriptedPrompter(['range', undefined]), { siteName: 'My Site', selection: 0 }), undefined);
+  });
+
+  test('with an Explorer selection there are three steps, and the range keeps the scope chosen first', async () => {
+    const prompter = new ScriptedPrompter(['selection', 'range', '1w']);
+    assert.deepEqual(await askSync(prompter, { siteName: 'My Site', selection: 3 }), { scope: 'selection', direction: 'put', deleteOrphans: false, range: '1w' });
+    const { ways, boxes } = questions(prompter);
+    assert.deepEqual(
+      [...ways, ...boxes].map((question) => [question.step, question.totalSteps]),
+      [
+        [1, 3],
+        [2, 3],
+        [3, 3],
+      ],
+    );
+  });
+});
+
+describe('the messages of a comparison and the Sync Preview heading', () => {
+  function range(text: string): TimeRange {
+    const parsed = parseRange(text);
+    assert.ok(parsed, text);
+    return parsed;
+  }
+
+  test('the heading names the direction, or the range a plan was made from', () => {
+    assert.equal(previewHeading('My Site', 'Production', 'put'), 'My Site and Production: Put newer files to remote');
+    assert.equal(previewHeading('My Site', 'Production', 'both'), 'My Site and Production: Get and put newer files');
+    assert.equal(previewHeading('My Site', 'Production', 'put', range('2d')), 'My Site and Production: Put files from the last 2 days');
+    assert.equal(previewHeading('My Site', 'Production', 'put', range('1d')), 'My Site and Production: Put files from the last day');
+  });
+
+  test('nothing to run says the site is in sync, or that nothing of the range needs putting', () => {
+    assert.equal(nothingToRun('My Site', 'Production', 3), '"My Site" and Production are in sync. 3 files compared.');
+    assert.equal(nothingToRun('My Site', 'Production', 1), '"My Site" and Production are in sync. 1 file compared.');
+    assert.equal(nothingToRun('My Site', 'Production', 3, range('2d')), 'Nothing from the last 2 days needs putting to Production. 3 files compared.');
+    assert.equal(nothingToRun('My Site', 'Production', 1, range('90m')), 'Nothing from the last 90 minutes needs putting to Production. 1 file compared.');
   });
 });
 

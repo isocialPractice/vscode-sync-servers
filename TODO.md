@@ -240,6 +240,53 @@ records.
 - [x] Close the plan
   - **Goal**: Resolve to [Phase V3, step 5](.claude/prompts/use-dwsync-file.prompt.md#phase-v3-pin-the-engines-release)
 
+## Put From a Time Range
+
+Next version: minor. The items make 1.0.0-alpha.2.1.0, built against the
+engine's 2.1.0, which puts the files of a time range.
+
+- [x] Install the packed engine and type check the extension against it
+  - **Goal**: Resolve to [Phase T1, step 1](.claude/prompts/use-date-range.prompt.md#phase-t1-the-choice-in-synchronize)
+- [x] The version, the `.vsix` name and the changelog section
+  - **Goal**: Resolve to [Phase T1, step 2](.claude/prompts/use-date-range.prompt.md#phase-t1-the-choice-in-synchronize)
+- [x] Put files from a time range as the first answer of "Which way", the
+      box that holds `1d`, and their tests
+  - **Goal**: Resolve to [Phase T1, step 3](.claude/prompts/use-date-range.prompt.md#phase-t1-the-choice-in-synchronize)
+- [x] The comparison of the recent files, the messages for nothing recent
+      and nothing to put, the preview's heading, and their tests
+  - **Goal**: Resolve to [Phase T1, step 4](.claude/prompts/use-date-range.prompt.md#phase-t1-the-choice-in-synchronize)
+- [x] `npm run notices` and the bundle test for `@jhauga/timecal` and
+      `getfiledate`
+  - **Goal**: Resolve to [Phase T1, step 5](.claude/prompts/use-date-range.prompt.md#phase-t1-the-choice-in-synchronize)
+- [x] Changelog, the extension's checks and the commit
+  - **Goal**: Resolve to [Phase T1, step 6](.claude/prompts/use-date-range.prompt.md#phase-t1-the-choice-in-synchronize)
+- [ ] The integration test of a range on a local folder server
+  - **Goal**: Resolve to [Phase T2, step 1](.claude/prompts/use-date-range.prompt.md#phase-t2-the-integration-test-and-the-documentation)
+- [ ] Documents and changelog
+  - **Goal**: Resolve to [Phase T2, step 2](.claude/prompts/use-date-range.prompt.md#phase-t2-the-integration-test-and-the-documentation)
+- [ ] The extension's checks and the commit
+  - **Goal**: Resolve to [Phase T2, step 3](.claude/prompts/use-date-range.prompt.md#phase-t2-the-integration-test-and-the-documentation)
+- [ ] The report
+  - **Goal**: Resolve to [Phase T2, step 4](.claude/prompts/use-date-range.prompt.md#phase-t2-the-integration-test-and-the-documentation)
+- [ ] Pin the engine's `2.1.0` from npm
+  - **Goal**: Resolve to [Phase T3, step 1](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+- [ ] A clean install, the notices and the extension's checks
+  - **Goal**: Resolve to [Phase T3, step 2](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+- [ ] Changelog, the date, the release check and the commit
+  - **Goal**: Resolve to [Phase T3, step 3](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+- [ ] Push `main` and wait for its CI run
+  - **Goal**: Resolve to [Phase T3, step 4](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+- [ ] The tag `v1.0.0-alpha.2.1.0`
+  - **Goal**: Resolve to [Phase T3, step 5](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+- [ ] The GitHub pre-release and its `Release` run
+  - **Goal**: Resolve to [Phase T3, step 6](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+- [ ] Check the release steps, commit and push
+  - **Goal**: Resolve to [Phase T3, step 7](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+- [ ] The report
+  - **Goal**: Resolve to [Phase T3, step 8](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+- [ ] Close the plan
+  - **Goal**: Resolve to [Phase T3, step 9](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
+
 ## Later Roadmap - paused
 
 Waits until both alphas are public; each item then becomes its own section.
@@ -286,3 +333,6 @@ Steps only the owner takes, because each changes state outside this machine.
 - [ ] Approve and create the first public pre-release, then install its
       `.vsix` on Windows, macOS and Linux and synchronize a copy of a site
       against `npm run sandbox` from the engine
+- [ ] Install the `.vsix` of `1.0.0-alpha.2.1.0`, run Synchronize... on a
+      real site, choose Put files from a time range, accept `1d`, and check
+      that the preview lists the files edited today and nothing older
