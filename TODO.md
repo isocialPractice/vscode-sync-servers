@@ -274,17 +274,17 @@ engine's 2.1.0, which puts the files of a time range.
   - **Goal**: Resolve to [Phase T3, step 2](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
 - [x] Changelog, the date, the release check and the commit
   - **Goal**: Resolve to [Phase T3, step 3](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
-- [ ] Push `main` and wait for its CI run
+- [x] Push `main` and wait for its CI run
   - **Goal**: Resolve to [Phase T3, step 4](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
-- [ ] The tag `v1.0.0-alpha.2.1.0`
+- [x] The tag `v1.0.0-alpha.2.1.0`
   - **Goal**: Resolve to [Phase T3, step 5](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
-- [ ] The GitHub pre-release and its `Release` run
+- [x] The GitHub pre-release and its `Release` run
   - **Goal**: Resolve to [Phase T3, step 6](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
-- [ ] Check the release steps, commit and push
+- [x] Check the release steps, commit and push
   - **Goal**: Resolve to [Phase T3, step 7](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
-- [ ] The report
+- [x] The report
   - **Goal**: Resolve to [Phase T3, step 8](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
-- [ ] Close the plan
+- [x] Close the plan
   - **Goal**: Resolve to [Phase T3, step 9](.claude/prompts/use-date-range.prompt.md#phase-t3-pin-the-engines-release-and-release-the-extension)
 
 ## Later Roadmap - paused
